@@ -5,3 +5,4 @@ syntax: glob
 *.rej
 *~
 *.swp
+*.noseids
