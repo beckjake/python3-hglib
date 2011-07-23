@@ -1,5 +1,5 @@
 import subprocess, os, struct, cStringIO, collections
-import hglib, error, util
+import hglib, error, util, templates
 
 from util import cmdbuilder
 
@@ -8,10 +8,6 @@ class hgclient(object):
     outputfmt = '>cI'
     outputfmtsize = struct.calcsize(outputfmt)
     retfmt = '>i'
-
-    # XXX fix this hack
-    _stylesdir = os.path.join(os.path.dirname(__file__), 'styles')
-    revstyle = os.path.join(_stylesdir, 'rev.style')
 
     revision = collections.namedtuple('revision', 'rev, node, tags, '
                                                   'branch, author, desc')
@@ -190,7 +186,7 @@ class hgclient(object):
         return d
 
     def log(self, revrange=None):
-        args = cmdbuilder('log', style=hgclient.revstyle, rev=revrange)
+        args = cmdbuilder('log', template=templates.changeset, rev=revrange)
 
         out = self.rawcommand(args)
         out = out.split('\0')[:-1]
@@ -200,7 +196,7 @@ class hgclient(object):
     def incoming(self, revrange=None, path=None):
         args = cmdbuilder('incoming',
                           path,
-                          style=hgclient.revstyle, rev=revrange)
+                          template=templates.changeset, rev=revrange)
 
         def eh(ret, out, err):
             if ret != 1:
@@ -215,7 +211,7 @@ class hgclient(object):
 
     def outgoing(self, revrange=None, path=None):
         args = cmdbuilder('outgoing',
-                          path, style=hgclient.revstyle, rev=revrange)
+                          path, template=templates.changeset, rev=revrange)
 
         def eh(ret, out, err):
             if ret != 1:
@@ -264,7 +260,7 @@ class hgclient(object):
         self.rawcommand(args)
 
     def tip(self):
-        args = cmdbuilder('tip', style=hgclient.revstyle)
+        args = cmdbuilder('tip', template=templates.changeset)
         out = self.rawcommand(args)
         out = out.split('\0')
 
