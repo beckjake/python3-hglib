@@ -4,9 +4,8 @@ import unittest
 
 import sys, os, subprocess, cStringIO, shutil, tempfile
 
-# XXX fix this hack
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
-from hglib import hglib
+import hglib
 
 class test_hglib(unittest.TestCase):
     def setUp(self):
@@ -14,7 +13,7 @@ class test_hglib(unittest.TestCase):
         os.chdir(self._tmpdir)
         # until we can run norepo commands in the cmdserver
         os.system('hg init')
-        self.client = hglib.connect()
+        self.client = hglib.open()
 
     def tearDown(self):
         shutil.rmtree(self._tmpdir)
@@ -46,7 +45,7 @@ class test_hglib(unittest.TestCase):
         self.client.commit('second')
 
         self.client.clone(dest='bar')
-        bar = hglib.connect('bar')
+        bar = hglib.open('bar')
 
         self.assertEquals(self.client.log(), bar.log())
         self.assertEquals(self.client.outgoing(path='bar'), bar.incoming())
@@ -69,14 +68,14 @@ class test_hglib(unittest.TestCase):
         self.assertEquals(rev, branches[rev.branch])
 
     def test_encoding(self):
-        self.client = hglib.connect(encoding='utf-8')
+        self.client = hglib.open(encoding='utf-8')
         self.assertEquals(self.client.encoding, 'utf-8')
 
     def test_paths(self):
         open('.hg/hgrc', 'a').write('[paths]\nfoo = bar\n')
 
         # hgrc isn't watched for changes yet, have to reconnect
-        self.client = hglib.connect()
+        self.client = hglib.open()
         paths = self.client.paths()
         self.assertEquals(len(paths), 1)
         self.assertEquals(paths['foo'], os.path.abspath('bar'))

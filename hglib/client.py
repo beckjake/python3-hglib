@@ -1,13 +1,5 @@
 import subprocess, os, struct, cStringIO, collections
-import error, util
-
-HGPATH = 'hg'
-
-def connect(path=None, encoding=None, configs=None):
-    ''' starts a cmdserver for the given path (or for a repository found in the
-    cwd). HGENCODING is set to the given encoding. configs is a list of key, value,
-    similar to those passed to hg --config. '''
-    return hgclient(path, encoding, configs)
+import hglib, error, util
 
 class hgclient(object):
     inputfmt = '>I'
@@ -23,7 +15,7 @@ class hgclient(object):
                                                   'branch, author, desc')
 
     def __init__(self, path, encoding, configs):
-        args = [HGPATH, 'serve', '--cmdserver', 'pipe']
+        args = [hglib.HGPATH, 'serve', '--cmdserver', 'pipe']
         if path:
             args += ['-R', path]
         if configs:
