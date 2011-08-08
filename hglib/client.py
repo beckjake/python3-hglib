@@ -1,6 +1,8 @@
 import subprocess, os, struct, cStringIO, collections
 import hglib, error, util
 
+from util import cmdbuilder
+
 class hgclient(object):
     inputfmt = '>I'
     outputfmt = '>cI'
@@ -9,7 +11,7 @@ class hgclient(object):
 
     # XXX fix this hack
     _stylesdir = os.path.join(os.path.dirname(__file__), 'styles')
-    revstyle = ['--style', os.path.join(_stylesdir, 'rev.style')]
+    revstyle = os.path.join(_stylesdir, 'rev.style')
 
     revision = collections.namedtuple('revision', 'rev, node, tags, '
                                                   'branch, author, desc')
@@ -162,10 +164,7 @@ class hgclient(object):
         return d
 
     def log(self, revrange=None):
-        args = ['log'] + self.revstyle
-        if revrange:
-            args.append('-r')
-            args += revrange
+        args = cmdbuilder('log', style=hgclient.revstyle, rev=revrange)
 
         out = self.outputruncommand(args)[1]
         out = out.split('\0')[:-1]
@@ -173,13 +172,9 @@ class hgclient(object):
         return self._parserevs(out)
 
     def incoming(self, revrange=None, path=None):
-        args = ['incoming'] + self.revstyle
-        if revrange:
-            args.append('-r')
-            args += revrange
-
-        if path:
-            args += [path]
+        args = cmdbuilder('incoming',
+                          path,
+                          style=hgclient.revstyle, rev=revrange)
 
         ret, out, err = self.outputruncommand(args, raiseonerror=False)
         if not ret:
@@ -191,13 +186,8 @@ class hgclient(object):
             raise error.CommandError(args, ret, out, err)
 
     def outgoing(self, revrange=None, path=None):
-        args = ['outgoing'] + self.revstyle
-        if revrange:
-            args.append('-r')
-            args += revrange
-
-        if path:
-            args += [path]
+        args = cmdbuilder('outgoing',
+                          path, style=hgclient.revstyle, rev=revrange)
 
         ret, out, err = self.outputruncommand(args, raiseonerror=False)
         if not ret:
@@ -209,10 +199,7 @@ class hgclient(object):
             raise error.CommandError(args, ret, out, err)
 
     def commit(self, message, addremove=False):
-        args = ['commit', '-m', message]
-
-        if addremove:
-            args += ['-A']
+        args = cmdbuilder('commit', m=message, A=addremove)
 
         self.outputruncommand(args)
 
@@ -230,7 +217,7 @@ class hgclient(object):
 
         try:
             inchannels = {'I' : fp.read, 'L' : fp.readline}
-            self.outputruncommand(['import', '-'], inchannels)
+            self.outputruncommand(cmdbuilder('import', _=True), inchannels)
         finally:
             if fp != patch:
                 fp.close()
@@ -240,24 +227,12 @@ class hgclient(object):
 
     def clone(self, source='.', dest=None, branch=None, updaterev=None,
               revrange=None):
-        args = ['clone']
-
-        if branch:
-            args += ['-b', branch]
-        if updaterev:
-            args += ['-u', updaterev]
-        if revrange:
-            args.append('-r')
-            args += revrange
-        args.append(source)
-
-        if dest:
-            args.append(dest)
-
+        args = cmdbuilder('clone', source, dest, b=branch, u=updaterev, r=revrange)
         self.outputruncommand(args)
 
     def tip(self):
-        out = self.outputruncommand(['tip'] + self.revstyle)[1]
+        args = cmdbuilder('tip', style=hgclient.revstyle)
+        out = self.outputruncommand(args)[1]
         out = out.split('\0')
 
         return self._parserevs(out)[0]
@@ -283,20 +258,14 @@ class hgclient(object):
 
             return dict([s.split(' = ') for s in out.rstrip().split('\n')])
         else:
-            args = ['paths', name]
+            args = cmdbuilder('paths', name)
             ret, out, err = self.outputruncommand(args, raiseonerror=False)
             if ret:
                 raise error.CommandError(args, ret, out, err)
             return out.rstrip()
 
     def cat(self, files, rev=None, output=None):
-        args = ['cat']
-        if rev:
-            args += ['-r', rev]
-        if output:
-            args += ['-o', output]
-
-        args += files
+        args = cmdbuilder('cat', *files, r=rev, o=output)
         ret, out, err = self.outputruncommand(args)
 
         if not output:
