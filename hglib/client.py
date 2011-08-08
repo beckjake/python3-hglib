@@ -108,14 +108,42 @@ class hgclient(object):
             else:
                 pass
 
-    def outputruncommand(self, args, inchannels = {}, raiseonerror=True):
-        ''' run the command specified by args, returning (ret, output, error) '''
+    def rawcommand(self, args, eh=None, prompt=None, input=None):
+        """
+        args is the cmdline (usually built using util.cmdbuilder)
+
+        eh is an error handler that is passed the return code, stdout and stderr
+        If no eh is given, we raise a CommandError if ret != 0
+
+        prompt is used to reply to prompts by the server
+        It receives the max number of bytes to return and the contents of stdout
+        received so far
+
+        input is used to reply to bulk data requests by the server
+        It receives the max number of bytes to return
+        """
+
         out, err = cStringIO.StringIO(), cStringIO.StringIO()
         outchannels = {'o' : out.write, 'e' : err.write}
+
+        inchannels = {}
+        if prompt is not None:
+            def func(size):
+                reply = prompt(size, out.getvalue())
+                return str(reply)
+            inchannels['L'] = func
+        if input is not None:
+            inchannels['I'] = input
+
         ret = self.runcommand(args, inchannels, outchannels)
-        if ret and raiseonerror:
-            raise error.CommandError(args, ret, out.getvalue(), err.getvalue())
-        return ret, out.getvalue(), err.getvalue()
+        out, err = out.getvalue(), err.getvalue()
+
+        if ret:
+            if eh is None:
+                raise error.CommandError(args, ret, out, err)
+            else:
+                return eh(ret, out, err)
+        return out
 
     def close(self):
         self.server.stdin.close()
@@ -140,9 +168,7 @@ class hgclient(object):
         if not self._config or refresh:
             self._config.clear()
 
-            ret, out, err = self.outputruncommand(['showconfig'])
-            if ret:
-                raise error.CommandError(['showconfig'], ret, out, err)
+            out = self.rawcommand(['showconfig'])
 
             for entry in cStringIO.StringIO(out):
                 k, v = entry.rstrip().split('=', 1)
@@ -152,7 +178,7 @@ class hgclient(object):
         return self._config
 
     def status(self):
-        ret, out = self.outputruncommand(['status', '-0'])
+        out = self.rawcommand(['status', '-0'])
 
         d = dict((c, []) for c in 'MARC!?I')
 
@@ -166,7 +192,7 @@ class hgclient(object):
     def log(self, revrange=None):
         args = cmdbuilder('log', style=hgclient.revstyle, rev=revrange)
 
-        out = self.outputruncommand(args)[1]
+        out = self.rawcommand(args)
         out = out.split('\0')[:-1]
 
         return self._parserevs(out)
@@ -176,32 +202,36 @@ class hgclient(object):
                           path,
                           style=hgclient.revstyle, rev=revrange)
 
-        ret, out, err = self.outputruncommand(args, raiseonerror=False)
-        if not ret:
-            out = self._eatlines(out, 2).split('\0')[:-1]
-            return self._parserevs(out)
-        elif ret == 1:
+        def eh(ret, out, err):
+            if ret != 1:
+                raise error.CommandError(args, ret, out, err)
+
+        out = self.rawcommand(args, eh=eh)
+        if not out:
             return []
-        else:
-            raise error.CommandError(args, ret, out, err)
+
+        out = self._eatlines(out, 2).split('\0')[:-1]
+        return self._parserevs(out)
 
     def outgoing(self, revrange=None, path=None):
         args = cmdbuilder('outgoing',
                           path, style=hgclient.revstyle, rev=revrange)
 
-        ret, out, err = self.outputruncommand(args, raiseonerror=False)
-        if not ret:
-            out = self._eatlines(out, 2).split('\0')[:-1]
-            return self._parserevs(out)
-        elif ret == 1:
+        def eh(ret, out, err):
+            if ret != 1:
+                raise error.CommandError(args, ret, out, err)
+
+        out = self.rawcommand(args, eh=eh)
+        if not out:
             return []
-        else:
-            raise error.CommandError(args, ret, out, err)
+
+        out = self._eatlines(out, 2).split('\0')[:-1]
+        return self._parserevs(out)
 
     def commit(self, message, addremove=False):
         args = cmdbuilder('commit', m=message, A=addremove)
 
-        self.outputruncommand(args)
+        self.rawcommand(args)
 
         # hope the tip hasn't changed since we committed
         return self.tip()
@@ -216,33 +246,36 @@ class hgclient(object):
             fp = patch
 
         try:
-            inchannels = {'I' : fp.read, 'L' : fp.readline}
-            self.outputruncommand(cmdbuilder('import', _=True), inchannels)
+            def readline(size, output):
+                return fp.readline(size)
+
+            self.rawcommand(cmdbuilder('import', _=True),
+                            prompt=readline, input=fp.read)
         finally:
             if fp != patch:
                 fp.close()
 
     def root(self):
-        return self.outputruncommand(['root'])[1].rstrip()
+        return self.rawcommand(['root']).rstrip()
 
     def clone(self, source='.', dest=None, branch=None, updaterev=None,
               revrange=None):
         args = cmdbuilder('clone', source, dest, b=branch, u=updaterev, r=revrange)
-        self.outputruncommand(args)
+        self.rawcommand(args)
 
     def tip(self):
         args = cmdbuilder('tip', style=hgclient.revstyle)
-        out = self.outputruncommand(args)[1]
+        out = self.rawcommand(args)
         out = out.split('\0')
 
         return self._parserevs(out)[0]
 
     def branch(self, name=None):
         if not name:
-            return self.outputruncommand(['branch'])[1].rstrip()
+            return self.rawcommand(['branch']).rstrip()
 
     def branches(self):
-        out = self.outputruncommand(['branches'])[1]
+        out = self.rawcommand(['branches'])
         branches = {}
         for line in out.rstrip().split('\n'):
             branch, revnode = line.split()
@@ -252,21 +285,19 @@ class hgclient(object):
 
     def paths(self, name=None):
         if not name:
-            out = self.outputruncommand(['paths'])[1]
+            out = self.rawcommand(['paths'])
             if not out:
                 return {}
 
             return dict([s.split(' = ') for s in out.rstrip().split('\n')])
         else:
             args = cmdbuilder('paths', name)
-            ret, out, err = self.outputruncommand(args, raiseonerror=False)
-            if ret:
-                raise error.CommandError(args, ret, out, err)
+            out = self.rawcommand(args)
             return out.rstrip()
 
     def cat(self, files, rev=None, output=None):
         args = cmdbuilder('cat', *files, r=rev, o=output)
-        ret, out, err = self.outputruncommand(args)
+        out = self.rawcommand(args)
 
         if not output:
             return out
