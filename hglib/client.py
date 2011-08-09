@@ -141,17 +141,38 @@ class hgclient(object):
         self.server = None
         return ret
 
-    @property
-    def encoding(self):
-        """ get the servers encoding """
-        if not 'getencoding' in self.capabilities:
-            raise CapabilityError('getencoding')
+    def branch(self, name=None):
+        if not name:
+            return self.rawcommand(['branch']).rstrip()
 
-        if not self._encoding:
-            self.server.stdin.write('getencoding\n')
-            self._encoding = self._readfromchannel('r')
+    def branches(self):
+        out = self.rawcommand(['branches'])
+        branches = {}
+        for line in out.rstrip().split('\n'):
+            branch, revnode = line.split()
+            branches[branch] = self.log(revrange=[revnode.split(':')[0]])[0]
 
-        return self._encoding
+        return branches
+
+    def cat(self, files, rev=None, output=None):
+        args = cmdbuilder('cat', *files, r=rev, o=output)
+        out = self.rawcommand(args)
+
+        if not output:
+            return out
+
+    def clone(self, source='.', dest=None, branch=None, updaterev=None,
+              revrange=None):
+        args = cmdbuilder('clone', source, dest, b=branch, u=updaterev, r=revrange)
+        self.rawcommand(args)
+
+    def commit(self, message, addremove=False):
+        args = cmdbuilder('commit', m=message, A=addremove)
+
+        self.rawcommand(args)
+
+        # hope the tip hasn't changed since we committed
+        return self.tip()
 
     def config(self, refresh=False):
         if not self._config or refresh:
@@ -166,64 +187,17 @@ class hgclient(object):
 
         return self._config
 
-    def status(self):
-        out = self.rawcommand(['status', '-0'])
+    @property
+    def encoding(self):
+        """ get the servers encoding """
+        if not 'getencoding' in self.capabilities:
+            raise CapabilityError('getencoding')
 
-        d = dict((c, []) for c in 'MARC!?I')
+        if not self._encoding:
+            self.server.stdin.write('getencoding\n')
+            self._encoding = self._readfromchannel('r')
 
-        for entry in out.split('\0'):
-            if entry:
-                t, f = entry.split(' ', 1)
-                d[t].append(f)
-
-        return d
-
-    def log(self, revrange=None):
-        args = cmdbuilder('log', template=templates.changeset, rev=revrange)
-
-        out = self.rawcommand(args)
-        out = out.split('\0')[:-1]
-
-        return self._parserevs(out)
-
-    def incoming(self, revrange=None, path=None):
-        args = cmdbuilder('incoming',
-                          path,
-                          template=templates.changeset, rev=revrange)
-
-        def eh(ret, out, err):
-            if ret != 1:
-                raise error.CommandError(args, ret, out, err)
-
-        out = self.rawcommand(args, eh=eh)
-        if not out:
-            return []
-
-        out = util.eatlines(out, 2).split('\0')[:-1]
-        return self._parserevs(out)
-
-    def outgoing(self, revrange=None, path=None):
-        args = cmdbuilder('outgoing',
-                          path, template=templates.changeset, rev=revrange)
-
-        def eh(ret, out, err):
-            if ret != 1:
-                raise error.CommandError(args, ret, out, err)
-
-        out = self.rawcommand(args, eh=eh)
-        if not out:
-            return []
-
-        out = util.eatlines(out, 2).split('\0')[:-1]
-        return self._parserevs(out)
-
-    def commit(self, message, addremove=False):
-        args = cmdbuilder('commit', m=message, A=addremove)
-
-        self.rawcommand(args)
-
-        # hope the tip hasn't changed since we committed
-        return self.tip()
+        return self._encoding
 
     def import_(self, patch):
         if isinstance(patch, str):
@@ -244,33 +218,44 @@ class hgclient(object):
             if fp != patch:
                 fp.close()
 
-    def root(self):
-        return self.rawcommand(['root']).rstrip()
+    def incoming(self, revrange=None, path=None):
+        args = cmdbuilder('incoming',
+                          path,
+                          template=templates.changeset, rev=revrange)
 
-    def clone(self, source='.', dest=None, branch=None, updaterev=None,
-              revrange=None):
-        args = cmdbuilder('clone', source, dest, b=branch, u=updaterev, r=revrange)
-        self.rawcommand(args)
+        def eh(ret, out, err):
+            if ret != 1:
+                raise error.CommandError(args, ret, out, err)
 
-    def tip(self):
-        args = cmdbuilder('tip', template=templates.changeset)
+        out = self.rawcommand(args, eh=eh)
+        if not out:
+            return []
+
+        out = util.eatlines(out, 2).split('\0')[:-1]
+        return self._parserevs(out)
+
+    def log(self, revrange=None):
+        args = cmdbuilder('log', template=templates.changeset, rev=revrange)
+
         out = self.rawcommand(args)
-        out = out.split('\0')
+        out = out.split('\0')[:-1]
 
-        return self._parserevs(out)[0]
+        return self._parserevs(out)
 
-    def branch(self, name=None):
-        if not name:
-            return self.rawcommand(['branch']).rstrip()
+    def outgoing(self, revrange=None, path=None):
+        args = cmdbuilder('outgoing',
+                          path, template=templates.changeset, rev=revrange)
 
-    def branches(self):
-        out = self.rawcommand(['branches'])
-        branches = {}
-        for line in out.rstrip().split('\n'):
-            branch, revnode = line.split()
-            branches[branch] = self.log(revrange=[revnode.split(':')[0]])[0]
+        def eh(ret, out, err):
+            if ret != 1:
+                raise error.CommandError(args, ret, out, err)
 
-        return branches
+        out = self.rawcommand(args, eh=eh)
+        if not out:
+            return []
+
+        out = util.eatlines(out, 2).split('\0')[:-1]
+        return self._parserevs(out)
 
     def paths(self, name=None):
         if not name:
@@ -284,9 +269,25 @@ class hgclient(object):
             out = self.rawcommand(args)
             return out.rstrip()
 
-    def cat(self, files, rev=None, output=None):
-        args = cmdbuilder('cat', *files, r=rev, o=output)
-        out = self.rawcommand(args)
+    def root(self):
+        return self.rawcommand(['root']).rstrip()
 
-        if not output:
-            return out
+    def status(self):
+        out = self.rawcommand(['status', '-0'])
+
+        d = dict((c, []) for c in 'MARC!?I')
+
+        for entry in out.split('\0'):
+            if entry:
+                t, f = entry.split(' ', 1)
+                d[t].append(f)
+
+        return d
+
+    def tip(self):
+        args = cmdbuilder('tip', template=templates.changeset)
+        out = self.rawcommand(args)
+        out = out.split('\0')
+
+        return self._parserevs(out)[0]
+
