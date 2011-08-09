@@ -1,4 +1,4 @@
-import itertools
+import itertools, cStringIO
 
 def grouper(n, iterable):
     ''' list(grouper(2, range(4))) -> [(0, 1), (2, 3)] '''
@@ -6,11 +6,23 @@ def grouper(n, iterable):
     return itertools.izip(*args)
 
 def eatlines(s, n):
-    idx = 0
-    for i in xrange(n):
-        idx = s.find('\n', idx) + 1
+    """
+    >>> eatlines("1\\n2", 1)
+    '2'
+    >>> eatlines("1\\n2", 2)
+    ''
+    >>> eatlines("1\\n2", 3)
+    ''
+    >>> eatlines("1\\n2\\n3", 1)
+    '2\\n3'
+    """
+    cs = cStringIO.StringIO(s)
 
-    return s[idx:]
+    for line in cs:
+        n -= 1
+        if n == 0:
+            return cs.read()
+    return ''
 
 def cmdbuilder(name, *args, **kwargs):
     """
