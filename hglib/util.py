@@ -5,6 +5,13 @@ def grouper(n, iterable):
     args = [iter(iterable)] * n
     return itertools.izip(*args)
 
+def eatlines(s, n):
+    idx = 0
+    for i in xrange(n):
+        idx = s.find('\n', idx) + 1
+
+    return s[idx:]
+
 def cmdbuilder(name, *args, **kwargs):
     """
     A helper for building the command arguments

@@ -65,13 +65,6 @@ class hgclient(object):
         fields compose one revision. '''
         return [self.revision._make(rev) for rev in util.grouper(6, splitted)]
 
-    def _eatlines(self, s, n):
-        idx = 0
-        for i in xrange(n):
-            idx = s.find('\n', idx) + 1
-
-        return s[idx:]
-
     def runcommand(self, args, inchannels, outchannels):
         def writeblock(data):
             self.server.stdin.write(struct.pack(self.inputfmt, len(data)))
@@ -206,7 +199,7 @@ class hgclient(object):
         if not out:
             return []
 
-        out = self._eatlines(out, 2).split('\0')[:-1]
+        out = util.eatlines(out, 2).split('\0')[:-1]
         return self._parserevs(out)
 
     def outgoing(self, revrange=None, path=None):
@@ -221,7 +214,7 @@ class hgclient(object):
         if not out:
             return []
 
-        out = self._eatlines(out, 2).split('\0')[:-1]
+        out = util.eatlines(out, 2).split('\0')[:-1]
         return self._parserevs(out)
 
     def commit(self, message, addremove=False):
