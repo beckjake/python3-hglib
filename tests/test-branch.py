@@ -11,7 +11,8 @@ class test_branch(common.basetest):
         rev = self.client.commit('first', addremove=True)
 
         self.assertEquals(rev.branch, 'foo')
-        self.assertEquals(self.client.branches()[rev.branch], rev)
+        self.assertEquals(self.client.branches(),
+                          [(rev.branch, int(rev.rev), rev.node[:12])])
 
     def test_reset_with_name(self):
         self.assertRaises(ValueError, self.client.branch, 'foo', clean=True)

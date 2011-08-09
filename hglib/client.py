@@ -156,13 +156,16 @@ class hgclient(object):
             # len('reset working directory to branch ') == 34
             return out[34:]
 
-    def branches(self):
-        out = self.rawcommand(['branches'])
-        branches = {}
-        for line in out.rstrip().split('\n'):
-            branch, revnode = line.split()
-            branches[branch] = self.log(revrange=[revnode.split(':')[0]])[0]
+    def branches(self, active=False, closed=False):
+        args = cmdbuilder('branches', a=active, c=closed)
+        out = self.rawcommand(args)
 
+        branches = []
+        for line in out.rstrip().splitlines():
+            name, line = line.split(' ', 1)
+            rev, node = line.split(':')
+            node = node.split()[0] # get rid of ' (inactive)'
+            branches.append((name, int(rev), node))
         return branches
 
     def cat(self, files, rev=None, output=None):
