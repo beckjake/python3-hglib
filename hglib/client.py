@@ -141,9 +141,20 @@ class hgclient(object):
         self.server = None
         return ret
 
-    def branch(self, name=None):
-        if not name:
-            return self.rawcommand(['branch']).rstrip()
+    def branch(self, name=None, clean=False, force=False):
+        if name and clean:
+            raise ValueError('cannot use both name and clean')
+
+        args = cmdbuilder('branch', name, f=force, C=clean)
+        out = self.rawcommand(args).rstrip()
+
+        if name:
+            return name
+        elif not clean:
+            return out
+        else:
+            # len('reset working directory to branch ') == 34
+            return out[34:]
 
     def branches(self):
         out = self.rawcommand(['branches'])
