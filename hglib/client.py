@@ -213,24 +213,34 @@ class hgclient(object):
 
         return self._encoding
 
-    def import_(self, patch):
-        if isinstance(patch, str):
-            fp = open(patch)
-        else:
-            assert hasattr(patch, 'read')
-            assert hasattr(patch, 'readline')
+    def import_(self, patches, strip=None, force=False, nocommit=False,
+                bypass=False, exact=False, importbranch=False, message=None,
+                date=None, user=None, similarity=None):
+        """
+        patches can be a list of file names with patches to apply
+        or a file-like object that contains a patch (needs read and readline)
+        """
+        if hasattr(patches, 'read') and hasattr(patches, 'readline'):
+            patch = patches
 
-            fp = patch
-
-        try:
             def readline(size, output):
-                return fp.readline(size)
+                return patch.readline(size)
 
-            self.rawcommand(cmdbuilder('import', _=True),
-                            prompt=readline, input=fp.read)
-        finally:
-            if fp != patch:
-                fp.close()
+            stdin = True
+            patches = ()
+            prompt = readline
+            input = patch.read
+        else:
+            stdin = False
+            prompt = None
+            input = None
+
+        args = cmdbuilder('import', *patches, strip=strip, force=force,
+                          nocommit=nocommit, bypass=bypass, exact=exact,
+                          importbranch=importbranch, message=message,
+                          date=date, user=user, similarity=similarity, _=stdin)
+
+        self.rawcommand(args, prompt=prompt, input=input)
 
     def incoming(self, revrange=None, path=None):
         args = cmdbuilder('incoming',

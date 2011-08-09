@@ -1,9 +1,7 @@
 import common, cStringIO
 import hglib
 
-class test_import(common.basetest):
-    def test_basic(self):
-        patch = """
+patch = """
 # HG changeset patch
 # User test
 # Date 0 0
@@ -17,5 +15,13 @@ diff -r 000000000000 -r c103a3dec114 a
 @@ -0,0 +1,1 @@
 +1
 """
+
+class test_import(common.basetest):
+    def test_basic_cstringio(self):
         self.client.import_(cStringIO.StringIO(patch))
+        self.assertEquals(self.client.cat(['a']), '1\n')
+
+    def test_basic_file(self):
+        open('patch', 'w').write(patch)
+        self.client.import_(['patch'])
         self.assertEquals(self.client.cat(['a']), '1\n')
