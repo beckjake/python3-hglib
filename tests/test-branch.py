@@ -8,7 +8,9 @@ class test_branch(common.basetest):
     def test_basic(self):
         self.assertEquals(self.client.branch('foo'), 'foo')
         self.append('a', 'a')
-        rev = self.client.commit('first', addremove=True)
+        rev, node = self.client.commit('first', addremove=True)
+
+        rev = self.client.log(node)[0]
 
         self.assertEquals(rev.branch, 'foo')
         self.assertEquals(self.client.branches(),

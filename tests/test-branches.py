@@ -13,7 +13,8 @@ class test_branches(common.basetest):
         branches = self.client.branches()
 
         expected = []
-        for r in (rev1, rev0):
+        for r, n in (rev1, rev0):
+            r = self.client.log(r)[0]
             expected.append((r.branch, int(r.rev), r.node[:12]))
 
         self.assertEquals(branches, expected)

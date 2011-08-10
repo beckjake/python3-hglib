@@ -186,7 +186,7 @@ class hgclient(object):
 
         out = self.rawcommand(args)
         rev, node = out.splitlines()[-1].rsplit(':')
-        return self.log(node)[0]
+        return int(rev.split()[-1]), node
 
     def config(self, refresh=False):
         if not self._config or refresh:
