@@ -15,3 +15,4 @@ class test_log(common.basetest):
         self.assertEquals(revs[1].node, node1)
 
         self.assertEquals(revs[0], self.client.log('0')[0])
+        self.assertEquals(self.client.log(), self.client.log(files=['a']))

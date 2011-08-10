@@ -266,8 +266,15 @@ class hgclient(object):
         out = util.eatlines(out, 2).split('\0')[:-1]
         return self._parserevs(out)
 
-    def log(self, revrange=None):
-        args = cmdbuilder('log', template=templates.changeset, rev=revrange)
+    def log(self, revrange=None, files=[], follow=False, followfirst=False,
+            date=None, copies=False, keyword=None, removed=False, onlymerges=False,
+            user=None, branch=None, prune=None, hidden=False, limit=None,
+            nomerges=False, include=None, exclude=None):
+        args = cmdbuilder('log', *files, template=templates.changeset,
+                          r=revrange, f=follow, follow_first=followfirst,
+                          d=date, C=copies, k=keyword, removed=removed,
+                          m=onlymerges, u=user, b=branch, P=prune, h=hidden,
+                          l=limit, M=nomerges, I=include, X=exclude)
 
         out = self.rawcommand(args)
         out = out.split('\0')[:-1]
