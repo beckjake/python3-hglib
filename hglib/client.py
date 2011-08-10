@@ -180,9 +180,17 @@ class hgclient(object):
         args = cmdbuilder('clone', source, dest, b=branch, u=updaterev, r=revrange)
         self.rawcommand(args)
 
-    def commit(self, message, addremove=False):
+    def commit(self, message=None, logfile=None, addremove=False, closebranch=False,
+               date=None, user=None, include=None, exclude=None):
+        if message is None and logfile is None:
+            raise ValueError("must provide at least a message or a logfile")
+        elif message and logfile:
+            raise ValueError("cannot specify both a message and a logfile")
+
         # --debug will print the committed cset
-        args = cmdbuilder('commit', debug=True, m=message, A=addremove)
+        args = cmdbuilder('commit', debug=True, m=message, A=addremove,
+                          close_branch=closebranch, d=date, u=user, l=logfile,
+                          I=include, X=exclude)
 
         out = self.rawcommand(args)
         rev, node = out.splitlines()[-1].rsplit(':')
