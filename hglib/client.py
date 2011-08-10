@@ -181,12 +181,12 @@ class hgclient(object):
         self.rawcommand(args)
 
     def commit(self, message, addremove=False):
-        args = cmdbuilder('commit', m=message, A=addremove)
+        # --debug will print the committed cset
+        args = cmdbuilder('commit', debug=True, m=message, A=addremove)
 
-        self.rawcommand(args)
-
-        # hope the tip hasn't changed since we committed
-        return self.tip()
+        out = self.rawcommand(args)
+        rev, node = out.splitlines()[-1].rsplit(':')
+        return self.log(node)[0]
 
     def config(self, refresh=False):
         if not self._config or refresh:
