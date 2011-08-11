@@ -296,6 +296,17 @@ class hgclient(object):
         out = util.eatlines(out, 2).split('\0')[:-1]
         return self._parserevs(out)
 
+    def parents(self, rev=None, file=None):
+        args = cmdbuilder('parents', file, template=templates.changeset, r=rev)
+
+        out = self.rawcommand(args)
+        if not out:
+            return
+
+        out = out.split('\0')[:-1]
+
+        return self._parserevs(out)
+
     def paths(self, name=None):
         if not name:
             out = self.rawcommand(['paths'])
