@@ -24,6 +24,27 @@ def eatlines(s, n):
             return cs.read()
     return ''
 
+def skiplines(s, prefix):
+    """
+    Skip lines starting with prefix in s
+
+    >>> skiplines('a\\nb\\na\\n', 'a')
+    'b\\na\\n'
+    >>> skiplines('a\\na\\n', 'a')
+    ''
+    >>> skiplines('', 'a')
+    ''
+    >>> skiplines('a\\nb', 'b')
+    'a\\nb'
+    """
+    cs = cStringIO.StringIO(s)
+
+    for line in cs:
+        if not line.startswith(prefix):
+            return line + cs.read()
+
+    return ''
+
 def cmdbuilder(name, *args, **kwargs):
     """
     A helper for building the command arguments
