@@ -341,3 +341,29 @@ class hgclient(object):
 
         return self._parserevs(out)[0]
 
+    def update(self, rev=None, clean=False, check=False, date=None):
+        """
+        Update the repository's working directory to changeset specified by rev.
+        If rev isn't specified, update to the tip of the current named branch.
+
+        Return the number of files (updated, merged, removed, unresolved)
+        """
+        if clean and check:
+            raise ValueError('clean and check cannot both be True')
+
+        args = cmdbuilder('update', r=rev, C=clean, c=check, d=date)
+
+        def eh(ret, out, err):
+            if ret == 1:
+                return out
+
+            raise error.CommandError(args, ret, out, err)
+
+
+        out = self.rawcommand(args, eh=eh)
+
+        # filter out 'merging ...' lines
+        out = util.skiplines(out, 'merging ')
+
+        counters = out.rstrip().split(', ')
+        return tuple(int(s.split(' ', 1)[0]) for s in counters)
