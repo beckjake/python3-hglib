@@ -305,10 +305,14 @@ class hgclient(object):
 
         self.rawcommand(args, prompt=prompt, input=input)
 
-    def incoming(self, revrange=None, path=None):
+    def incoming(self, revrange=None, path=None, force=False, newest=False,
+                 bundle=None, bookmarks=False, branch=None, limit=None,
+                 nomerges=False, subrepos=False):
         args = cmdbuilder('incoming',
                           path,
-                          template=templates.changeset, rev=revrange)
+                          template=templates.changeset, r=revrange,
+                          f=force, n=newest, bundle=bundle,
+                          B=bookmarks, b=branch, l=limit, M=nomerges, S=subrepos)
 
         def eh(ret, out, err):
             if ret != 1:
