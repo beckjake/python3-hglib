@@ -1,4 +1,4 @@
-import subprocess, os, struct, cStringIO, collections
+import subprocess, os, struct, cStringIO, collections, re
 import hglib, error, util, templates
 
 from util import cmdbuilder
@@ -26,7 +26,6 @@ class hgclient(object):
                                        stdout=subprocess.PIPE, env=env)
 
         self._readhello()
-        self._config = {}
 
     def _readhello(self):
         """ read the hello message the server sends when started """
@@ -196,18 +195,36 @@ class hgclient(object):
         rev, node = out.splitlines()[-1].rsplit(':')
         return int(rev.split()[-1]), node
 
-    def config(self, refresh=False):
-        if not self._config or refresh:
-            self._config.clear()
+    def config(self, names=[], untrusted=False, showsource=False):
+        """
+        Return a list of (section, key, value) config settings from all hgrc files
 
-            out = self.rawcommand(['showconfig'])
+        When showsource is specified, return (source, section, key, value) where
+        source is of the form filename:[line]
+        """
+        def splitline(s):
+            k, value = s.rstrip().split('=', 1)
+            section, key = k.split('.', 1)
+            return (section, key, value)
 
-            for entry in cStringIO.StringIO(out):
-                k, v = entry.rstrip().split('=', 1)
-                section, name = k.split('.', 1)
-                self._config.setdefault(section, {})[name] = v
+        if not isinstance(names, list):
+            names = [names]
 
-        return self._config
+        args = cmdbuilder('showconfig', *names, u=untrusted, debug=showsource)
+        out = self.rawcommand(args)
+
+        conf = []
+        if showsource:
+            out = util.skiplines(out, 'read config from: ')
+            for line in out.splitlines():
+                m = re.match(r"(.+?:(?:\d+:)?) (.*)", line)
+                t = splitline(m.group(2))
+                conf.append((m.group(1)[:-1], t[0], t[1], t[2]))
+        else:
+            for line in out.splitlines():
+                conf.append(splitline(line))
+
+        return conf
 
     @property
     def encoding(self):
