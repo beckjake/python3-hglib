@@ -32,3 +32,20 @@ class test_outgoing_incoming(common.basetest):
         self.assertEquals(out[0].node, node)
 
         self.assertEquals(out, other.incoming())
+
+    def test_bookmarks(self):
+        self.append('a', 'a')
+        self.client.commit('first', addremove=True)
+        self.append('a', 'a')
+        self.client.commit('second')
+
+        self.client.clone(dest='other')
+        other = hglib.open('other')
+
+        self.client.bookmark('bm1', 1)
+
+        self.assertEquals(other.incoming(bookmarks=True),
+                          [('bm1', self.client.tip().node[:12])])
+
+        self.assertEquals(self.client.outgoing(path='other', bookmarks=True),
+                          [('bm1', self.client.tip().node[:12])])

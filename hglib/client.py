@@ -308,6 +308,12 @@ class hgclient(object):
     def incoming(self, revrange=None, path=None, force=False, newest=False,
                  bundle=None, bookmarks=False, branch=None, limit=None,
                  nomerges=False, subrepos=False):
+        """
+        Return new changesets found in the specified path or the default pull
+        location.
+
+        When bookmarks=True, return a list of (name, node) of incoming bookmarks.
+        """
         args = cmdbuilder('incoming',
                           path,
                           template=templates.changeset, r=revrange,
@@ -322,8 +328,15 @@ class hgclient(object):
         if not out:
             return []
 
-        out = util.eatlines(out, 2).split('\0')[:-1]
-        return self._parserevs(out)
+        out = util.eatlines(out, 2)
+        if bookmarks:
+            bms = []
+            for line in out.splitlines():
+                bms.append(tuple(line.split()))
+            return bms
+        else:
+            out = out.split('\0')[:-1]
+            return self._parserevs(out)
 
     def log(self, revrange=None, files=[], follow=False, followfirst=False,
             date=None, copies=False, keyword=None, removed=False, onlymerges=False,
@@ -343,6 +356,13 @@ class hgclient(object):
     def outgoing(self, revrange=None, path=None, force=False, newest=False,
                  bookmarks=False, branch=None, limit=None, nomerges=False,
                  subrepos=False):
+        """
+        Return changesets not found in the specified path or the default push
+        location.
+
+        When bookmarks=True, return a list of (name, node) of bookmarks that will
+        be pushed.
+        """
         args = cmdbuilder('outgoing',
                           path,
                           template=templates.changeset, r=revrange,
@@ -357,8 +377,15 @@ class hgclient(object):
         if not out:
             return []
 
-        out = util.eatlines(out, 2).split('\0')[:-1]
-        return self._parserevs(out)
+        out = util.eatlines(out, 2)
+        if bookmarks:
+            bms = []
+            for line in out.splitlines():
+                bms.append(tuple(line.split()))
+            return bms
+        else:
+            out = out.split('\0')[:-1]
+            return self._parserevs(out)
 
     def parents(self, rev=None, file=None):
         args = cmdbuilder('parents', file, template=templates.changeset, r=rev)
