@@ -340,9 +340,14 @@ class hgclient(object):
 
         return self._parserevs(out)
 
-    def outgoing(self, revrange=None, path=None):
+    def outgoing(self, revrange=None, path=None, force=False, newest=False,
+                 bookmarks=False, branch=None, limit=None, nomerges=False,
+                 subrepos=False):
         args = cmdbuilder('outgoing',
-                          path, template=templates.changeset, rev=revrange)
+                          path,
+                          template=templates.changeset, r=revrange,
+                          f=force, n=newest, B=bookmarks,
+                          b=branch, S=subrepos)
 
         def eh(ret, out, err):
             if ret != 1:
