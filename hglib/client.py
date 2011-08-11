@@ -157,6 +157,27 @@ class hgclient(object):
 
         self.rawcommand(args)
 
+    def bookmarks(self):
+        """
+        Return the bookmarks as a list of (name, rev, node) and the
+        index of the current one.
+
+        If there isn't a current one, -1 is returned as the index
+        """
+        out = self.rawcommand(['bookmarks'])
+
+        bms = []
+        current = -1
+        if out.rstrip() != 'no bookmarks set':
+            for line in out.splitlines():
+                iscurrent, line = line[0:3], line[3:]
+                if '*' in iscurrent:
+                    current = len(bms)
+                name, line = line.split(' ', 1)
+                rev, node = line.split(':')
+                bms.append((name, int(rev), node))
+        return bms, current
+
     def branch(self, name=None, clean=False, force=False):
         if name and clean:
             raise ValueError('cannot use both name and clean')
