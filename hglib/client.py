@@ -150,6 +150,13 @@ class hgclient(object):
 
         self.rawcommand(args)
 
+    def bookmark(self, name, rev=None, force=False, delete=False, inactive=False,
+                 rename=None):
+        args = cmdbuilder('bookmark', name, r=rev, f=force, d=delete,
+                          i=inactive, m=rename)
+
+        self.rawcommand(args)
+
     def branch(self, name=None, clean=False, force=False):
         if name and clean:
             raise ValueError('cannot use both name and clean')
