@@ -140,6 +140,16 @@ class hgclient(object):
         self.server = None
         return ret
 
+    def backout(self, rev, merge=False, parent=None, tool=None, message=None,
+                logfile=None, date=None, user=None):
+        if message and logfile:
+            raise ValueError("cannot specify both a message and a logfile")
+
+        args = cmdbuilder('backout', r=rev, merge=merge, parent=parent, t=tool,
+                          m=message, l=logfile, d=date, u=user)
+
+        self.rawcommand(args)
+
     def branch(self, name=None, clean=False, force=False):
         if name and clean:
             raise ValueError('cannot use both name and clean')
