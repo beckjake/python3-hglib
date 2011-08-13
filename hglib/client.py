@@ -546,7 +546,10 @@ class hgclient(object):
 
         for entry in out.split('\0'):
             if entry:
-                l.append(tuple(entry.rsplit(' ', 1)))
+                if entry[0] == ' ':
+                    l.append((' ', entry[2:]))
+                else:
+                    l.append(tuple(entry.split(' ', 1)))
 
         return l
 

@@ -39,3 +39,10 @@ class test_status(common.basetest):
         self.client.copy('source', 'dest')
         l = [('A', 'dest'), (' ', 'source')]
         self.assertEquals(self.client.status(copies=True), l)
+
+    def test_copy_origin_space(self):
+        self.append('s ource', 'a')
+        self.client.commit('first', addremove=True)
+        self.client.copy('s ource', 'dest')
+        l = [('A', 'dest'), (' ', 's ource')]
+        self.assertEquals(self.client.status(copies=True), l)
