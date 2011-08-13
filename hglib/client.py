@@ -417,6 +417,27 @@ class hgclient(object):
 
         return self._parserevs(out)
 
+    def move(self, source, dest, after=False, force=False, dryrun=False,
+             include=None, exclude=None):
+        if not isinstance(source, list):
+            source = [source]
+
+        source.append(dest)
+        args = cmdbuilder('move', *source, A=after, f=force, n=dryrun,
+                          I=include, X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def outgoing(self, revrange=None, path=None, force=False, newest=False,
                  bookmarks=False, branch=None, limit=None, nomerges=False,
                  subrepos=False):
