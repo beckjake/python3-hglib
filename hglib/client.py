@@ -140,6 +140,31 @@ class hgclient(object):
         self.server = None
         return ret
 
+    def add(self, files=[], dryrun=False, subrepos=False, include=None,
+            exclude=None):
+        """
+        Add the specified files on the next commit.
+        If no files are given, add all files to the repository.
+
+        Return whether all given files were added.
+        """
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('add', *files, n=dryrun, S=subrepos, I=include, X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def backout(self, rev, merge=False, parent=None, tool=None, message=None,
                 logfile=None, date=None, user=None):
         if message and logfile:
