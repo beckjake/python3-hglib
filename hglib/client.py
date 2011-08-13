@@ -322,6 +322,24 @@ class hgclient(object):
         self.rawcommand(args, eh=eh)
         return not warnings[0]
 
+    def forget(self, files, include=None, exclude=None):
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('forget', *files, I=include, X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        out = self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def import_(self, patches, strip=None, force=False, nocommit=False,
                 bypass=False, exact=False, importbranch=False, message=None,
                 date=None, user=None, similarity=None):
