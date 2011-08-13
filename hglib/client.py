@@ -301,6 +301,27 @@ class hgclient(object):
 
         return self._encoding
 
+    def copy(self, source, dest, after=False, force=False, dryrun=False,
+             include=None, exclude=None):
+        if not isinstance(source, list):
+            source = [source]
+
+        source.append(dest)
+        args = cmdbuilder('copy', *source, A=after, f=force, n=dryrun,
+                          I=include, X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def import_(self, patches, strip=None, force=False, nocommit=False,
                 bypass=False, exact=False, importbranch=False, message=None,
                 date=None, user=None, similarity=None):
