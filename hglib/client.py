@@ -521,7 +521,7 @@ class hgclient(object):
                ignored=False, copies=False, subrepos=False, include=None,
                exclude=None):
         """
-        Return a dictionary with the following keys:
+        Return a list of (code, file path) where code can be:
 
                 M = modified
                 A = added
@@ -531,8 +531,6 @@ class hgclient(object):
                 ? = untracked
                 I = ignored
                   = origin of the previous file listed as A (added)
-
-        And a list of files to match as values.
         """
         if rev and change:
             raise ValueError('cannot specify both rev and change')
@@ -544,14 +542,13 @@ class hgclient(object):
         args.append('-0')
 
         out = self.rawcommand(args)
-        d = dict((c, []) for c in 'MARC!?I')
+        l = []
 
         for entry in out.split('\0'):
             if entry:
-                t, f = entry.split(' ', 1)
-                d[t].append(f)
+                l.append(tuple(entry.rsplit(' ', 1)))
 
-        return d
+        return l
 
     def tip(self):
         args = cmdbuilder('tip', template=templates.changeset)

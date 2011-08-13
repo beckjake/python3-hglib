@@ -24,7 +24,7 @@ class test_update(common.basetest):
         self.assertEquals(m, 0)
         self.assertEquals(r, 0)
         self.assertEquals(ur, 1)
-        self.assertEquals(self.client.status()['M'][0], 'a')
+        self.assertTrue(('M', 'a') in self.client.status())
 
     def test_merge(self):
         self.append('a', '\n\n\n\nb')
@@ -39,7 +39,7 @@ class test_update(common.basetest):
         self.assertEquals(m, 1)
         self.assertEquals(r, 0)
         self.assertEquals(ur, 0)
-        self.assertEquals(self.client.status()['M'][0], 'a')
+        self.assertEquals(self.client.status(), [('M', 'a')])
 
     def test_tip(self):
         self.client.update(self.rev0)

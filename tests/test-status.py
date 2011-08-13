@@ -2,8 +2,7 @@ import common, os
 
 class test_status(common.basetest):
     def test_empty(self):
-        d = dict((c, []) for c in 'MARC!?I')
-        self.assertEquals(self.client.status(), d)
+        self.assertEquals(self.client.status(), [])
 
     def test_one_of_each(self):
         self.append('.hgignore', 'ignored')
@@ -12,7 +11,7 @@ class test_status(common.basetest):
         self.append('modified', 'a')
         self.append('removed', 'a')
         self.append('missing', 'a')
-        rev0 = self.client.commit('first', addremove=True)
+        self.client.commit('first', addremove=True)
         self.append('modified', 'a')
         self.append('added', 'a')
         self.client.add(['added'])
@@ -20,12 +19,23 @@ class test_status(common.basetest):
         self.client.remove(['removed'])
         self.append('untracked')
 
-        d = {'M' : ['modified'],
-             'A' : ['added'],
-             'R' : ['removed'],
-             'C' : ['.hgignore', 'clean'],
-             '!' : ['missing'],
-             '?' : ['untracked'],
-             'I' : ['ignored']}
+        l = [('M', 'modified'),
+             ('A', 'added'),
+             ('R', 'removed'),
+             ('C', '.hgignore'),
+             ('C', 'clean'),
+             ('!', 'missing'),
+             ('?', 'untracked'),
+             ('I', 'ignored')]
 
-        self.assertEquals(self.client.status(all=True), d)
+        st = self.client.status(all=True)
+
+        for i in l:
+            self.assertTrue(i in st)
+
+    def test_copy(self):
+        self.append('source', 'a')
+        self.client.commit('first', addremove=True)
+        self.client.copy('source', 'dest')
+        l = [('A', 'dest'), (' ', 'source')]
+        self.assertEquals(self.client.status(copies=True), l)
