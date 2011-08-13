@@ -516,9 +516,34 @@ class hgclient(object):
     def root(self):
         return self.rawcommand(['root']).rstrip()
 
-    def status(self):
-        out = self.rawcommand(['status', '-0'])
+    def status(self, rev=None, change=None, all=False, modified=False, added=False,
+               removed=False, deleted=False, clean=False, unknown=False,
+               ignored=False, copies=False, subrepos=False, include=None,
+               exclude=None):
+        """
+        Return a dictionary with the following keys:
 
+                M = modified
+                A = added
+                R = removed
+                C = clean
+                ! = missing (deleted by non-hg command, but still tracked)
+                ? = untracked
+                I = ignored
+                  = origin of the previous file listed as A (added)
+
+        And a list of files to match as values.
+        """
+        if rev and change:
+            raise ValueError('cannot specify both rev and change')
+
+        args = cmdbuilder('status', rev=rev, change=change, A=all, m=modified,
+                          a=added, r=removed, d=deleted, c=clean, u=unknown,
+                          i=ignored, C=copies, S=subrepos, I=include, X=exclude)
+
+        args.append('-0')
+
+        out = self.rawcommand(args)
         d = dict((c, []) for c in 'MARC!?I')
 
         for entry in out.split('\0'):
