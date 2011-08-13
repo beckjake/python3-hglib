@@ -456,6 +456,24 @@ class hgclient(object):
             out = self.rawcommand(args)
             return out.rstrip()
 
+    def remove(self, files, after=False, force=False, include=None, exclude=None):
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('remove', *files, A=after, f=force, I=include, X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        out = self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def root(self):
         return self.rawcommand(['root']).rstrip()
 
