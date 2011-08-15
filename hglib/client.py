@@ -356,6 +356,13 @@ class hgclient(object):
 
             return self.rawcommand(args)
 
+    def identify(self, rev=None, source=None, num=False, id=False, branch=False,
+                 tags=False, bookmarks=False):
+        args = cmdbuilder('identify', source, r=rev, n=num, i=id, b=branch, t=tags,
+                          B=bookmarks)
+
+        return self.rawcommand(args)
+
     def import_(self, patches, strip=None, force=False, nocommit=False,
                 bypass=False, exact=False, importbranch=False, message=None,
                 date=None, user=None, similarity=None):
