@@ -613,6 +613,16 @@ class hgclient(object):
 
         return l
 
+    def tag(self, names, rev=None, message=None, force=False, local=False,
+            remove=False, date=None, user=None):
+        if not isinstance(names, list):
+            names = [names]
+
+        args = cmdbuilder('tag', *names, r=rev, m=message, f=force, l=local,
+                          remove=remove, d=date, u=user)
+
+        self.rawcommand(args)
+
     def tip(self):
         args = cmdbuilder('tip', template=templates.changeset)
         out = self.rawcommand(args)
