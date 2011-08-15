@@ -26,6 +26,7 @@ class hgclient(object):
                                        stdout=subprocess.PIPE, env=env)
 
         self._readhello()
+        self._version = None
 
     def _readhello(self):
         """ read the hello message the server sends when started """
@@ -645,3 +646,20 @@ class hgclient(object):
 
         counters = out.rstrip().split(', ')
         return tuple(int(s.split(' ', 1)[0]) for s in counters)
+
+    @property
+    def version(self):
+        if self._version is None:
+            v = self.rawcommand(cmdbuilder('version', q=True))
+            v = list(re.match(r'.*?(\d+)\.(\d+)\.?(\d+)?(\+[0-9a-f-]+)?',
+                              v).groups())
+
+            for i in range(3):
+                try:
+                    v[i] = int(v[i])
+                except TypeError:
+                    v[i] = 0
+
+            self._version = tuple(v)
+
+        return self._version
