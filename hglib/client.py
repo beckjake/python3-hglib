@@ -518,6 +518,24 @@ class hgclient(object):
             out = self.rawcommand(args)
             return out.rstrip()
 
+    def push(self, dest=None, rev=None, force=False, bookmark=None, branch=None,
+             newbranch=False, ssh=None, remotecmd=None, insecure=False):
+        args = cmdbuilder('push', dest, r=rev, f=force, B=bookmark, b=branch,
+                          new_branch=newbranch, e=ssh, remotecmd=remotecmd,
+                          insecure=insecure)
+
+        # we could use Python 3 nonlocal here...
+        pushed = [True]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                pushed[0] = False
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        self.rawcommand(args, eh=eh)
+        return pushed[0]
+
     def remove(self, files, after=False, force=False, include=None, exclude=None):
         if not isinstance(files, list):
             files = [files]
