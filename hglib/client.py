@@ -623,6 +623,24 @@ class hgclient(object):
 
         self.rawcommand(args)
 
+    def tags(self):
+        """
+        Return a list of repository tags as: (name, rev, node, islocal)
+        """
+        args = cmdbuilder('tags', v=True)
+
+        out = self.rawcommand(args)
+
+        t = []
+        for line in out.splitlines():
+            taglocal = line.endswith(' local')
+            if taglocal:
+                line = line[:-6]
+            name, rev = line.rsplit(' ', 1)
+            rev, node = rev.split(':')
+            t.append((name.rstrip(), int(rev), node, taglocal))
+        return t
+
     def tip(self):
         args = cmdbuilder('tip', template=templates.changeset)
         out = self.rawcommand(args)
