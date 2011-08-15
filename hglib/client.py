@@ -518,6 +518,24 @@ class hgclient(object):
             out = self.rawcommand(args)
             return out.rstrip()
 
+    def pull(self, source=None, rev=None, update=False, force=False, bookmark=None,
+             branch=None, ssh=None, remotecmd=None, insecure=False, tool=None):
+        args = cmdbuilder('pull', source, r=rev, u=update, f=force, B=bookmark,
+                          b=branch, e=ssh, remotecmd=remotecmd, insecure=insecure,
+                          t=tool)
+
+        # we could use Python 3 nonlocal here...
+        success = [True]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                success[0] = False
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        self.rawcommand(args, eh=eh)
+        return success[0]
+
     def push(self, dest=None, rev=None, force=False, bookmark=None, branch=None,
              newbranch=False, ssh=None, remotecmd=None, insecure=False):
         args = cmdbuilder('push', dest, r=rev, f=force, B=bookmark, b=branch,
