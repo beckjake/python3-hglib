@@ -442,6 +442,12 @@ class hgclient(object):
 
         return self._parserevs(out)
 
+    def merge(self, rev=None, force=False, tool=None, cb=None):
+        # we can't really use --preview since merge doesn't support --template
+        args = cmdbuilder('merge', r=rev, f=force, t=tool)
+
+        self.rawcommand(args, prompt=cb)
+
     def move(self, source, dest, after=False, force=False, dryrun=False,
              include=None, exclude=None):
         if not isinstance(source, list):
