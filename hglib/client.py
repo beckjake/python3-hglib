@@ -1,5 +1,5 @@
 import subprocess, os, struct, cStringIO, collections, re
-import hglib, error, util, templates
+import hglib, error, util, templates, merge
 
 from util import cmdbuilder
 
@@ -442,11 +442,26 @@ class hgclient(object):
 
         return self._parserevs(out)
 
-    def merge(self, rev=None, force=False, tool=None, cb=None):
+    def merge(self, rev=None, force=False, tool=None, cb=merge.handlers.abort):
+        """
+        merge working directory with another revision
+
+        cb can one of merge.handlers, or a function that gets a single argument
+        which are the contents of stdout. It should return one of the expected
+        choices (a single character).
+        """
         # we can't really use --preview since merge doesn't support --template
         args = cmdbuilder('merge', r=rev, f=force, t=tool)
 
-        self.rawcommand(args, prompt=cb)
+        prompt = None
+        if cb is merge.handlers.abort:
+            prompt = cb
+        elif cb is merge.handlers.noninteractive:
+            args.append('-y')
+        else:
+            prompt = lambda size, output: cb(output) + '\n'
+
+        self.rawcommand(args, prompt=prompt)
 
     def move(self, source, dest, after=False, force=False, dryrun=False,
              include=None, exclude=None):
