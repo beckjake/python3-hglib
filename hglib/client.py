@@ -595,6 +595,26 @@ class hgclient(object):
         out = self.rawcommand(args, eh=eh)
         return not warnings[0]
 
+    def revert(self, files, rev=None, all=False, date=None, nobackup=False,
+               dryrun=False, include=None, exclude=None):
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('revert', *files, r=rev, a=all, d=date,
+                          no_backup=nobackup, n=dryrun, I=include, X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        out = self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def root(self):
         return self.rawcommand(['root']).rstrip()
 
