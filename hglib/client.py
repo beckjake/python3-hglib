@@ -155,17 +155,10 @@ class hgclient(object):
 
         args = cmdbuilder('add', *files, n=dryrun, S=subrepos, I=include, X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
-
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
+        eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
-        return not warnings[0]
+
+        return bool(eh)
 
     def addremove(self, files=[], similarity=None, dryrun=False, include=None,
                   exclude=None):
@@ -175,17 +168,10 @@ class hgclient(object):
         args = cmdbuilder('addremove', *files, s=similarity, n=dryrun, I=include,
                           X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
-
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
+        eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
-        return not warnings[0]
+
+        return bool(eh)
 
     def backout(self, rev, merge=False, parent=None, tool=None, message=None,
                 logfile=None, date=None, user=None):
@@ -332,17 +318,10 @@ class hgclient(object):
         args = cmdbuilder('copy', *source, A=after, f=force, n=dryrun,
                           I=include, X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
-
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
+        eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
-        return not warnings[0]
+
+        return bool(eh)
 
     def forget(self, files, include=None, exclude=None):
         if not isinstance(files, list):
@@ -350,17 +329,10 @@ class hgclient(object):
 
         args = cmdbuilder('forget', *files, I=include, X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
+        eh = util.reterrorhandler(args)
+        self.rawcommand(args, eh=eh)
 
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
-        out = self.rawcommand(args, eh=eh)
-        return not warnings[0]
+        return bool(eh)
 
     def diff(self, files=[], revs=[], change=None, text=False,
              git=False, nodates=False, showfunction=False, reverse=False,
@@ -492,17 +464,10 @@ class hgclient(object):
         args = cmdbuilder('move', *source, A=after, f=force, n=dryrun,
                           I=include, X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
-
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
+        eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
-        return not warnings[0]
+
+        return bool(eh)
 
     def outgoing(self, revrange=None, path=None, force=False, newest=False,
                  bookmarks=False, branch=None, limit=None, nomerges=False,
@@ -567,17 +532,10 @@ class hgclient(object):
                           b=branch, e=ssh, remotecmd=remotecmd, insecure=insecure,
                           t=tool)
 
-        # we could use Python 3 nonlocal here...
-        success = [True]
-
-        def eh(ret, out, err):
-            if ret == 1:
-                success[0] = False
-            else:
-                raise error.CommandError(args, ret, out, err)
-
+        eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
-        return success[0]
+
+        return bool(eh)
 
     def push(self, dest=None, rev=None, force=False, bookmark=None, branch=None,
              newbranch=False, ssh=None, remotecmd=None, insecure=False):
@@ -585,17 +543,10 @@ class hgclient(object):
                           new_branch=newbranch, e=ssh, remotecmd=remotecmd,
                           insecure=insecure)
 
-        # we could use Python 3 nonlocal here...
-        pushed = [True]
-
-        def eh(ret, out, err):
-            if ret == 1:
-                pushed[0] = False
-            else:
-                raise error.CommandError(args, ret, out, err)
-
+        eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
-        return pushed[0]
+
+        return bool(eh)
 
     def remove(self, files, after=False, force=False, include=None, exclude=None):
         if not isinstance(files, list):
@@ -603,17 +554,10 @@ class hgclient(object):
 
         args = cmdbuilder('remove', *files, A=after, f=force, I=include, X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
+        eh = util.reterrorhandler(args)
+        self.rawcommand(args, eh=eh)
 
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
-        out = self.rawcommand(args, eh=eh)
-        return not warnings[0]
+        return bool(eh)
 
     def revert(self, files, rev=None, all=False, date=None, nobackup=False,
                dryrun=False, include=None, exclude=None):
@@ -623,17 +567,10 @@ class hgclient(object):
         args = cmdbuilder('revert', *files, r=rev, a=all, d=date,
                           no_backup=nobackup, n=dryrun, I=include, X=exclude)
 
-        # we could use Python 3 nonlocal here...
-        warnings = [False]
+        eh = util.reterrorhandler(args)
+        self.rawcommand(args, eh=eh)
 
-        def eh(ret, out, err):
-            if ret == 1:
-                warnings[0] = True
-            else:
-                raise error.CommandError(args, ret, out, err)
-
-        out = self.rawcommand(args, eh=eh)
-        return not warnings[0]
+        return bool(eh)
 
     def root(self):
         return self.rawcommand(['root']).rstrip()
