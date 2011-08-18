@@ -640,6 +640,86 @@ class hgclient(object):
             t.append((name.rstrip(), int(rev), node, taglocal))
         return t
 
+    def summary(self, remote=False):
+        """
+        Return a dictionary with a brief summary of the working directory state,
+        including parents, branch, commit status, and available updates.
+
+            'parent' : a list of (rev, node, tags, message)
+            'branch' : the current branch
+            'commit' : True if the working directory is clean, False otherwise
+            'update' : number of available updates,
+            ['remote' : (in, in bookmarks, out, out bookmarks),]
+            ['mq': (applied, unapplied) mq patches,]
+
+            unparsed entries will be of them form key : value
+        """
+        args = cmdbuilder('summary', remote=remote)
+
+        out = self.rawcommand(args).splitlines()
+
+        d = {}
+        while out:
+            line = out.pop(0)
+            name, value = line.split(': ', 1)
+
+            if name == 'parent':
+                parent, tags = value.split(' ', 1)
+                rev, node = parent.split(':')
+
+                if tags:
+                    tags = tags.replace(' (empty repository)', '')
+                else:
+                    tags = None
+
+                value = d.get(name, [])
+
+                if rev == '-1':
+                    value.append((int(rev), node, tags, None))
+                else:
+                    message = out.pop(0)[1:]
+                    value.append((int(rev), node, tags, message))
+            elif name == 'branch':
+                pass
+            elif name == 'commit':
+                value = value == '(clean)'
+            elif name == 'update':
+                if value == '(current)':
+                    value = 0
+                else:
+                    value = int(value.split(' ', 1)[0])
+            elif remote and name == 'remote':
+                if value == '(synced)':
+                    value = 0, 0, 0, 0
+                else:
+                    inc = incb = out_ = outb = 0
+
+                    for v in value.split(', '):
+                        count, v = v.split(' ', 1)
+                        if v == 'outgoing':
+                            out_ = int(count)
+                        elif v.endswith('incoming'):
+                            inc = int(count)
+                        elif v == 'incoming bookmarks':
+                            incb = int(count)
+                        elif v == 'outgoing bookmarks':
+                            outb = int(count)
+
+                    value = inc, incb, out_, outb
+            elif name == 'mq':
+                applied = unapplied = 0
+                for v in value.split(', '):
+                    count, v = v.split(' ', 1)
+                    if v == 'applied':
+                        applied = int(count)
+                    elif v == 'unapplied':
+                        unapplied = int(count)
+                value = applied, unapplied
+
+            d[name] = value
+
+        return d
+
     def tip(self):
         args = cmdbuilder('tip', template=templates.changeset)
         out = self.rawcommand(args)
