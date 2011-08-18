@@ -1,4 +1,4 @@
-import itertools, cStringIO
+import itertools, cStringIO, error
 
 def grouper(n, iterable):
     ''' list(grouper(2, range(4))) -> [(0, 1), (2, 3)] '''
@@ -98,3 +98,35 @@ def cmdbuilder(name, *args, **kwargs):
             cmd.append(a)
 
     return cmd
+
+class reterrorhandler(object):
+    """
+    This class is meant to be used with rawcommand() error handler argument.
+    It remembers the return value the command returned if it's one of allowed
+    values, which is only 1 if none are given. Otherwise it raises a CommandError.
+
+    >>> e = reterrorhandler('')
+    >>> bool(e)
+    True
+    >>> e(1, 'a', '')
+    'a'
+    >>> bool(e)
+    False
+    """
+    def __init__(self, args, allowed=None):
+        self.args = args
+        self.ret = 0
+        if allowed is None:
+            self.allowed = [1]
+        else:
+            self.allowed = allowed
+
+    def __call__(self, ret, out, err):
+        self.ret = ret
+        if ret not in self.allowed:
+            raise error.CommandError(self.args, ret, out, err)
+        return out
+
+    def __nonzero__(self):
+        """ Returns True if the return code was 0, False otherwise """
+        return self.ret == 0
