@@ -167,6 +167,26 @@ class hgclient(object):
         self.rawcommand(args, eh=eh)
         return not warnings[0]
 
+    def addremove(self, files=[], similarity=None, dryrun=False, include=None,
+                  exclude=None):
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('addremove', *files, s=similarity, n=dryrun, I=include,
+                          X=exclude)
+
+        # we could use Python 3 nonlocal here...
+        warnings = [False]
+
+        def eh(ret, out, err):
+            if ret == 1:
+                warnings[0] = True
+            else:
+                raise error.CommandError(args, ret, out, err)
+
+        self.rawcommand(args, eh=eh)
+        return not warnings[0]
+
     def backout(self, rev, merge=False, parent=None, tool=None, message=None,
                 logfile=None, date=None, user=None):
         if message and logfile:
