@@ -268,6 +268,22 @@ class hgclient(object):
             branches.append((name, int(rev), node))
         return branches
 
+    def bundle(self, file, destrepo=None, rev=[], branch=[], base=[], all=False,
+               force=False, type=None, ssh=None, remotecmd=None, insecure=False):
+        """
+        create a changegroup file
+
+        Return True if a bundle was created, False if no changes were found.
+        """
+        args = cmdbuilder('bundle', file, destrepo, f=force, r=rev, b=branch,
+                          base=base, a=all, t=type, e=ssh, remotecmd=remotecmd,
+                          insecure=insecure)
+
+        eh = util.reterrorhandler(args)
+        self.rawcommand(args, eh=eh)
+
+        return bool(eh)
+
     def cat(self, files, rev=None, output=None):
         args = cmdbuilder('cat', *files, r=rev, o=output)
         out = self.rawcommand(args)
