@@ -193,6 +193,16 @@ class hgclient(object):
         for line in out.splitlines():
             yield tuple(line.split(': ', 1))
 
+    def archive(self, dest, rev=None, nodecode=False, prefix=None, type=None,
+                subrepos=False, include=None, exclude=None):
+        """
+        create an unversioned archive of a repository revision
+        """
+        args = cmdbuilder('archive', dest, r=rev, no_decode=nodecode, p=prefix,
+                          t=type, S=subrepos, I=include, X=exclude)
+
+        self.rawcommand(args)
+
     def backout(self, rev, merge=False, parent=None, tool=None, message=None,
                 logfile=None, date=None, user=None):
         if message and logfile:
