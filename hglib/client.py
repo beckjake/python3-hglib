@@ -173,6 +173,26 @@ class hgclient(object):
 
         return bool(eh)
 
+    def annotate(self, files, rev=None, nofollow=False, text=False, user=False,
+                 file=False, date=False, number=False, changeset=False,
+                 line=False, verbose=False, include=None, exclude=None):
+        """
+        Show changeset information by line for each file in files.
+
+        yields a (info, contents) tuple for each line in a file
+        """
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('annotate', *files, r=rev, no_follow=nofollow, a=text,
+                          u=user, f=file, d=date, n=number, c=changeset, l=line,
+                          v=verbose, I=include, X=exclude)
+
+        out = self.rawcommand(args)
+
+        for line in out.splitlines():
+            yield tuple(line.split(': ', 1))
+
     def backout(self, rev, merge=False, parent=None, tool=None, message=None,
                 logfile=None, date=None, user=None):
         if message and logfile:
