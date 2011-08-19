@@ -369,6 +369,22 @@ class hgclient(object):
 
         return bool(eh)
 
+    def export(self, revs, output=None, switchparent=False, text=False, git=False,
+               nodates=False):
+        """
+        Return the header and diffs for one or more changesets. When output is
+        given, dumps to file.
+        """
+        if not isinstance(revs, list):
+            revs = [revs]
+        args = cmdbuilder('export', *revs, o=output, switch_parent=switchparent,
+                          a=text, g=git, nodates=nodates)
+
+        out = self.rawcommand(args)
+
+        if output is None:
+            return out
+
     def forget(self, files, include=None, exclude=None):
         if not isinstance(files, list):
             files = [files]
