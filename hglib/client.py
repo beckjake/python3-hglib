@@ -434,6 +434,24 @@ class hgclient(object):
 
         return util.grouper(fieldcount, out)
 
+    def heads(self, rev=[], startrev=[], topological=False, closed=False):
+        """
+        Return a list of current repository heads or branch heads
+        """
+        if not isinstance(rev, list):
+            rev = [rev]
+
+        args = cmdbuilder('heads', *rev, r=startrev, t=topological, c=closed,
+                          template=templates.changeset)
+
+        def eh(ret, out, err):
+            if ret != 1:
+                raise error.CommandError(args, ret, out, err)
+            return ''
+
+        out = self.rawcommand(args, eh=eh).split('\0')[:-1]
+        return self._parserevs(out)
+
     def diff(self, files=[], revs=[], change=None, text=False,
              git=False, nodates=False, showfunction=False, reverse=False,
              ignoreallspace=False, ignorespacechange=False, ignoreblanklines=False,
