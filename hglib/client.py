@@ -24,7 +24,8 @@ class hgclient(object):
             env['HGENCODING'] = encoding
 
         self.server = subprocess.Popen(args, stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE, env=env)
+                                       stdout=subprocess.PIPE, env=env,
+                                       close_fds=util.closefds)
 
         self._readhello()
         self._version = None

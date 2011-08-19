@@ -1,4 +1,6 @@
-import itertools, cStringIO, error
+import itertools, cStringIO, error, os
+
+closefds = os.name == 'posix'
 
 def grouper(n, iterable):
     ''' list(grouper(2, range(4))) -> [(0, 1), (2, 3)] '''
