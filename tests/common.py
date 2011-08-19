@@ -15,7 +15,10 @@ class basetest(unittest.TestCase):
         self.client = hglib.open()
 
     def tearDown(self):
-        shutil.rmtree(self._testtmp)
+        try:
+            shutil.rmtree(self._testtmp)
+        except AttributeError:
+            pass # if our setUp was overriden
 
     def append(self, path, *args):
         f = open(path, 'a')
