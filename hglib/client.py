@@ -369,6 +369,22 @@ class hgclient(object):
 
         return bool(eh)
 
+    def diff(self, files=[], revs=[], change=None, text=False,
+             git=False, nodates=False, showfunction=False, reverse=False,
+             ignoreallspace=False, ignorespacechange=False, ignoreblanklines=False,
+             unified=None, stat=False, subrepos=False, include=None, exclude=None):
+        if change and revs:
+            raise ValueError('cannot specify both change and rev')
+
+        args = cmdbuilder('diff', *files, r=revs, c=change,
+                          a=text, g=git, nodates=nodates,
+                          p=showfunction, reverse=reverse,
+                          w=ignoreallspace, b=ignorespacechange,
+                          B=ignoreblanklines, U=unified, stat=stat,
+                          S=subrepos, I=include, X=exclude)
+
+        return self.rawcommand(args)
+
     def export(self, revs, output=None, switchparent=False, text=False, git=False,
                nodates=False):
         """
@@ -451,22 +467,6 @@ class hgclient(object):
 
         out = self.rawcommand(args, eh=eh).split('\0')[:-1]
         return self._parserevs(out)
-
-    def diff(self, files=[], revs=[], change=None, text=False,
-             git=False, nodates=False, showfunction=False, reverse=False,
-             ignoreallspace=False, ignorespacechange=False, ignoreblanklines=False,
-             unified=None, stat=False, subrepos=False, include=None, exclude=None):
-            if change and revs:
-                raise ValueError('cannot specify both change and rev')
-
-            args = cmdbuilder('diff', *files, r=revs, c=change,
-                              a=text, g=git, nodates=nodates,
-                              p=showfunction, reverse=reverse,
-                              w=ignoreallspace, b=ignorespacechange,
-                              B=ignoreblanklines, U=unified, stat=stat,
-                              S=subrepos, I=include, X=exclude)
-
-            return self.rawcommand(args)
 
     def identify(self, rev=None, source=None, num=False, id=False, branch=False,
                  tags=False, bookmarks=False):
