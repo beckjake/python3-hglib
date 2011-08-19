@@ -396,6 +396,44 @@ class hgclient(object):
 
         return bool(eh)
 
+    def grep(self, pattern, files=[], all=False, text=False, follow=False,
+             ignorecase=False, fileswithmatches=False, line=False, user=False,
+             date=False, include=None, exclude=None):
+        """
+        search for a pattern in specified files and revisions
+
+        yields (filename, revision, [line, [match status, [user, [date, [match]]]]])
+        per match depending on the given options.
+        """
+        if not isinstance(files, list):
+            files = [files]
+
+        args = cmdbuilder('grep', *[pattern] + files, all=all, a=text, f=follow,
+                          i=ignorecase, l=fileswithmatches, n=line, u=user, d=date,
+                          I=include, X=exclude)
+        args.append('-0')
+
+        def eh(ret, out, err):
+            if ret != 1:
+                raise error.CommandError(args, ret, out, err)
+            return ''
+
+        out = self.rawcommand(args, eh=eh).split('\0')
+
+        fieldcount = 3
+        if user:
+            fieldcount += 1
+        if date:
+            fieldcount += 1
+        if line:
+            fieldcount += 1
+        if all:
+            fieldcount += 1
+        if fileswithmatches:
+            fieldcount -= 1
+
+        return util.grouper(fieldcount, out)
+
     def diff(self, files=[], revs=[], change=None, text=False,
              git=False, nodates=False, showfunction=False, reverse=False,
              ignoreallspace=False, ignorespacechange=False, ignoreblanklines=False,
