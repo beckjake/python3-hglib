@@ -678,6 +678,28 @@ class hgclient(object):
 
         return bool(eh)
 
+    def resolve(self, file=[], all=False, listfiles=False, mark=False, unmark=False,
+                tool=None, include=None, exclude=None):
+        """
+        redo merges or set/view the merge status of files
+
+        When listfiles is True, returns a list of (code, file path) of resolved
+        and unresolved files. Code will be 'R' or 'U' accordingly.
+        """
+        if not isinstance(file, list):
+            file = [file]
+
+        args = cmdbuilder('resolve', *file, a=all, l=listfiles, m=mark, u=unmark,
+                          t=tool, I=include, X=exclude)
+
+        out = self.rawcommand(args)
+
+        if listfiles:
+            l = []
+            for line in out.splitlines():
+                l.append(tuple(line.split(' ', 1)))
+            return l
+
     def revert(self, files, rev=None, all=False, date=None, nobackup=False,
                dryrun=False, include=None, exclude=None):
         if not isinstance(files, list):
