@@ -553,6 +553,31 @@ class hgclient(object):
 
         return self._parserevs(out)
 
+    def manifest(self, rev=None, all=False):
+        """
+        Yields (nodeid, permission, executable, symlink, file path) tuples for
+        version controlled files for the given revision. If no revision is given,
+        the first parent of the working directory is used, or the null revision if
+        no revision is checked out.
+
+        When all is True, all files from all revisions are yielded (just the name).
+        This includes deleted and renamed files.
+        """
+        args = cmdbuilder('manifest', r=rev, all=all, debug=True)
+
+        out = self.rawcommand(args)
+
+        if all:
+            for line in out.splitlines():
+                yield line
+        else:
+            for line in out.splitlines():
+                node = line[0:40]
+                perm = line[41:44]
+                symlink = line[45] == '@'
+                executable = line[45] == '*'
+                yield (node, perm, executable, symlink, line[47:])
+
     def merge(self, rev=None, force=False, tool=None, cb=merge.handlers.abort):
         """
         merge working directory with another revision
