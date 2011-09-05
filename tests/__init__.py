@@ -18,4 +18,5 @@ def setUp():
     os.environ["HGTMP"] = os.path.realpath(tmpdir)
 
 def tearDown(self):
+    os.chdir('..')
     shutil.rmtree(os.environ["HGTMP"])

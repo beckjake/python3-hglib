@@ -3,10 +3,23 @@ import unittest
 
 import hglib
 
+def resultappender(list):
+    def decorator(f):
+        def decorated(*args, **kwargs):
+            result = f(*args, **kwargs)
+            list.append(result)
+            return result
+        return decorated
+    return decorator
+
 class basetest(unittest.TestCase):
     def setUp(self):
         self._testtmp = os.environ["TESTTMP"] = os.environ["HOME"] = \
             os.path.join(os.environ["HGTMP"], self.__class__.__name__)
+
+        self.clients = []
+        self._oldopen = hglib.open
+        hglib.open = resultappender(self.clients)(hglib.open)
 
         os.mkdir(self._testtmp)
         os.chdir(self._testtmp)
@@ -15,6 +28,13 @@ class basetest(unittest.TestCase):
         self.client = hglib.open()
 
     def tearDown(self):
+        # on Windows we cannot rmtree before closing all instances because of used
+        # files
+        hglib.open = self._oldopen
+        for client in self.clients:
+            if client.server is not None:
+                client.close()
+        os.chdir('..')
         try:
             shutil.rmtree(self._testtmp)
         except AttributeError:
