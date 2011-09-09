@@ -33,7 +33,7 @@ class test_update(common.basetest):
         self.client.commit('fourth')
         self.client.update(rev2)
         old = open('a').read()
-        open('a', 'w').write('a' + old)
+        open('a', 'wb').write('a' + old)
         u, m, r, ur = self.client.update()
         self.assertEquals(u, 0)
         self.assertEquals(m, 1)

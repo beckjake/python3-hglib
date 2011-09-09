@@ -22,6 +22,6 @@ class test_import(common.basetest):
         self.assertEquals(self.client.cat(['a']), '1\n')
 
     def test_basic_file(self):
-        open('patch', 'w').write(patch)
+        open('patch', 'wb').write(patch)
         self.client.import_(['patch'])
         self.assertEquals(self.client.cat(['a']), '1\n')

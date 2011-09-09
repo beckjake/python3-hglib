@@ -41,7 +41,7 @@ class basetest(unittest.TestCase):
             pass # if our setUp was overriden
 
     def append(self, path, *args):
-        f = open(path, 'a')
+        f = open(path, 'ab')
         for a in args:
             f.write(str(a))
         f.close()
