@@ -16,6 +16,7 @@ def setUp():
     os.environ["HGENCODINGMODE"] = "strict"
     tmpdir = tempfile.mkdtemp('', 'python-hglib.')
     os.environ["HGTMP"] = os.path.realpath(tmpdir)
+    os.environ["HGRCPATH"] = ""
 
 def tearDown(self):
     os.chdir('..')
