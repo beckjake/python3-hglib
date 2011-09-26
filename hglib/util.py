@@ -133,6 +133,11 @@ class reterrorhandler(object):
 
 close_fds = os.name == 'posix'
 
+startupinfo = None
+if os.name == 'nt':
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
 def popen(args, env={}):
     environ = None
     if env:
@@ -141,4 +146,4 @@ def popen(args, env={}):
 
     return subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, close_fds=close_fds,
-                            env=environ)
+                            startupinfo=startupinfo, env=environ)
