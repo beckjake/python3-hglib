@@ -1,6 +1,4 @@
-import itertools, cStringIO, error, os
-
-closefds = os.name == 'posix'
+import itertools, cStringIO, error, os, subprocess
 
 def grouper(n, iterable):
     ''' list(grouper(2, range(4))) -> [(0, 1), (2, 3)] '''
@@ -132,3 +130,14 @@ class reterrorhandler(object):
     def __nonzero__(self):
         """ Returns True if the return code was 0, False otherwise """
         return self.ret == 0
+
+close_fds = os.name == 'posix'
+
+def popen(args, env={}):
+    environ = None
+    if env:
+        environ = dict(os.environ)
+        environ.update(env)
+
+    return subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            close_fds=close_fds, env=environ)
