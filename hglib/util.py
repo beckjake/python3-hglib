@@ -140,4 +140,5 @@ def popen(args, env={}):
         environ.update(env)
 
     return subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            close_fds=close_fds, env=environ)
+                            stderr=subprocess.PIPE, close_fds=close_fds,
+                            env=environ)
