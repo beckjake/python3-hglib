@@ -131,6 +131,30 @@ class reterrorhandler(object):
         """ Returns True if the return code was 0, False otherwise """
         return self.ret == 0
 
+class propertycache(object):
+    """
+    Decorator that remembers the return value of a function call.
+
+    >>> class obj(object):
+    ...     def func(self):
+    ...         print 'func'
+    ...         return []
+    ...     func = propertycache(func)
+    >>> o = obj()
+    >>> o.func
+    func
+    []
+    >>> o.func
+    []
+    """
+    def __init__(self, func):
+        self.func = func
+        self.name = func.__name__
+    def __get__(self, obj, type=None):
+        result = self.func(obj)
+        setattr(obj, self.name, result)
+        return result
+
 close_fds = os.name == 'posix'
 
 startupinfo = None
