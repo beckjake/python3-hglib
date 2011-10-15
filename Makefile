@@ -8,4 +8,4 @@ all: help
 .PHONY: tests
 
 tests:
-	nosetests --with-doctest
+	$(PYTHON) test.py --with-doctest
