@@ -381,8 +381,9 @@ class hgclient(object):
 
         branches = []
         for line in out.rstrip().splitlines():
-            name, line = line.split(' ', 1)
-            rev, node = line.split(':')
+            namerev, node = line.rsplit(':', 1)
+            name, rev = namerev.rsplit(' ', 1)
+            name = name.rstrip()
             node = node.split()[0] # get rid of ' (inactive)'
             branches.append((name, int(rev), node))
         return branches
