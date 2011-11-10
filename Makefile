@@ -7,5 +7,9 @@ all: help
 
 .PHONY: tests
 
+dist:
+	TAR_OPTIONS="--owner=root --group=root --mode=u+w,go-w,a+rX-s" $(PYTHON) setup.py -q sdist
+
+
 tests:
 	$(PYTHON) test.py --with-doctest
