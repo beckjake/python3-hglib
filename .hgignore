@@ -1,5 +1,8 @@
 syntax: glob
 
+dist
+MANIFEST
+MANIFEST.in
 *.pyc
 *.orig
 *.rej
