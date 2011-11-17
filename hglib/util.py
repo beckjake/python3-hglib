@@ -81,7 +81,10 @@ def cmdbuilder(name, *args, **kwargs):
 
         arg = arg.replace('_', '-')
         if arg != '-':
-            arg = '-' + arg if len(arg) == 1 else '--' + arg
+            if len(arg) == 1:
+                arg = '-' + arg
+            else:
+                arg = '--' + arg
         if isinstance(val, bool):
             if val:
                 cmd.append(arg)
