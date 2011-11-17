@@ -74,14 +74,21 @@ class test_summary(common.basetest):
 
         other.bookmark('bmother')
         d['remote'] = (1, 1, 0, 1)
-        d['parent'] = [(0, node[:12], 'tip bmother', 'first')]
+        if self.client.version < (2, 0, 0):
+            d['parent'] = [(0, node[:12], 'tip bmother', 'first')]
+        else:
+            d['bookmarks'] = '*bmother'
         self.assertEquals(other.summary(remote=True), d)
 
         self.append('other/a', 'a')
         rev, node = other.commit('second in other')
 
         d['remote'] = (1, 1, 1, 1)
-        d['parent'] = [(1, node[:12], 'tip bmother', 'second in other')]
+        if self.client.version < (2, 0, 0):
+            tags = 'tip bmother'
+        else:
+            tags = 'tip'
+        d['parent'] = [(1, node[:12], tags, 'second in other')]
 
         self.assertEquals(other.summary(remote=True), d)
 
