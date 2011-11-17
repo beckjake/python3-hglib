@@ -163,7 +163,8 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('add', *files, n=dryrun, S=subrepos, I=include, X=exclude)
+        args = cmdbuilder('add', n=dryrun, S=subrepos, I=include, X=exclude,
+                          *files)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -195,8 +196,8 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('addremove', *files, s=similarity, n=dryrun, I=include,
-                          X=exclude)
+        args = cmdbuilder('addremove', s=similarity, n=dryrun, I=include,
+                          X=exclude, *files)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -227,9 +228,9 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('annotate', *files, r=rev, no_follow=nofollow, a=text,
-                          u=user, f=file, d=date, n=number, c=changeset, l=line,
-                          v=verbose, I=include, X=exclude)
+        args = cmdbuilder('annotate', r=rev, no_follow=nofollow, a=text,
+                          u=user, f=file, d=date, n=number, c=changeset,
+                          l=line, v=verbose, I=include, X=exclude, *files)
 
         out = self.rawcommand(args)
 
@@ -437,7 +438,7 @@ class hgclient(object):
         "%d"  dirname of file being printed, or '.' if in repository root
         "%p"  root-relative path name of file being printed
         """
-        args = cmdbuilder('cat', *files, r=rev, o=output)
+        args = cmdbuilder('cat', r=rev, o=output, *files)
         out = self.rawcommand(args)
 
         if not output:
@@ -501,7 +502,7 @@ class hgclient(object):
         if not isinstance(names, list):
             names = [names]
 
-        args = cmdbuilder('showconfig', *names, u=untrusted, debug=showsource)
+        args = cmdbuilder('showconfig', u=untrusted, debug=showsource, *names)
         out = self.rawcommand(args)
 
         conf = []
@@ -551,8 +552,8 @@ class hgclient(object):
             source = [source]
 
         source.append(dest)
-        args = cmdbuilder('copy', *source, A=after, f=force, n=dryrun,
-                          I=include, X=exclude)
+        args = cmdbuilder('copy', A=after, f=force, n=dryrun,
+                          I=include, X=exclude, *source)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -585,12 +586,12 @@ class hgclient(object):
         if change and revs:
             raise ValueError('cannot specify both change and rev')
 
-        args = cmdbuilder('diff', *files, r=revs, c=change,
+        args = cmdbuilder('diff', r=revs, c=change,
                           a=text, g=git, nodates=nodates,
                           p=showfunction, reverse=reverse,
                           w=ignoreallspace, b=ignorespacechange,
                           B=ignoreblanklines, U=unified, stat=stat,
-                          S=subrepos, I=include, X=exclude)
+                          S=subrepos, I=include, X=exclude, *files)
 
         return self.rawcommand(args)
 
@@ -619,8 +620,8 @@ class hgclient(object):
         """
         if not isinstance(revs, list):
             revs = [revs]
-        args = cmdbuilder('export', *revs, o=output, switch_parent=switchparent,
-                          a=text, g=git, nodates=nodates)
+        args = cmdbuilder('export', o=output, switch_parent=switchparent,
+                          a=text, g=git, nodates=nodates, *revs)
 
         out = self.rawcommand(args)
 
@@ -643,7 +644,7 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('forget', *files, I=include, X=exclude)
+        args = cmdbuilder('forget', I=include, X=exclude, *files)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -677,9 +678,9 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('grep', *[pattern] + files, all=all, a=text, f=follow,
-                          i=ignorecase, l=fileswithmatches, n=line, u=user, d=date,
-                          I=include, X=exclude)
+        args = cmdbuilder('grep', all=all, a=text, f=follow, i=ignorecase,
+                          l=fileswithmatches, n=line, u=user, d=date,
+                          I=include, X=exclude, *[pattern] + files)
         args.append('-0')
 
         def eh(ret, out, err):
@@ -719,8 +720,8 @@ class hgclient(object):
         if not isinstance(rev, list):
             rev = [rev]
 
-        args = cmdbuilder('heads', *rev, r=startrev, t=topological, c=closed,
-                          template=templates.changeset)
+        args = cmdbuilder('heads', r=startrev, t=topological, c=closed,
+                          template=templates.changeset, *rev)
 
         def eh(ret, out, err):
             if ret != 1:
@@ -791,10 +792,11 @@ class hgclient(object):
             prompt = None
             input = None
 
-        args = cmdbuilder('import', *patches, strip=strip, force=force,
+        args = cmdbuilder('import', strip=strip, force=force,
                           nocommit=nocommit, bypass=bypass, exact=exact,
                           importbranch=importbranch, message=message,
-                          date=date, user=user, similarity=similarity, _=stdin)
+                          date=date, user=user, similarity=similarity, _=stdin,
+                          *patches)
 
         self.rawcommand(args, prompt=prompt, input=input)
 
@@ -887,11 +889,11 @@ class hgclient(object):
         include - include names matching the given patterns
         exclude - exclude names matching the given patterns
         """
-        args = cmdbuilder('log', *files, template=templates.changeset,
+        args = cmdbuilder('log', template=templates.changeset,
                           r=revrange, f=follow, follow_first=followfirst,
                           d=date, C=copies, k=keyword, removed=removed,
                           m=onlymerges, u=user, b=branch, P=prune, h=hidden,
-                          l=limit, M=nomerges, I=include, X=exclude)
+                          l=limit, M=nomerges, I=include, X=exclude, *files)
 
         out = self.rawcommand(args)
         out = out.split('\0')[:-1]
@@ -980,8 +982,8 @@ class hgclient(object):
             source = [source]
 
         source.append(dest)
-        args = cmdbuilder('move', *source, A=after, f=force, n=dryrun,
-                          I=include, X=exclude)
+        args = cmdbuilder('move', A=after, f=force, n=dryrun,
+                          I=include, X=exclude, *source)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -1152,7 +1154,8 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('remove', *files, A=after, f=force, I=include, X=exclude)
+        args = cmdbuilder('remove', A=after, f=force, I=include, X=exclude,
+                          *files)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -1179,8 +1182,8 @@ class hgclient(object):
         if not isinstance(file, list):
             file = [file]
 
-        args = cmdbuilder('resolve', *file, a=all, l=listfiles, m=mark, u=unmark,
-                          t=tool, I=include, X=exclude)
+        args = cmdbuilder('resolve', a=all, l=listfiles, m=mark, u=unmark,
+                          t=tool, I=include, X=exclude, *file)
 
         out = self.rawcommand(args)
 
@@ -1220,8 +1223,9 @@ class hgclient(object):
         if not isinstance(files, list):
             files = [files]
 
-        args = cmdbuilder('revert', *files, r=rev, a=all, d=date,
-                          no_backup=nobackup, n=dryrun, I=include, X=exclude)
+        args = cmdbuilder('revert', r=rev, a=all, d=date,
+                          no_backup=nobackup, n=dryrun, I=include, X=exclude,
+                          *files)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -1309,8 +1313,8 @@ class hgclient(object):
         if not isinstance(names, list):
             names = [names]
 
-        args = cmdbuilder('tag', *names, r=rev, m=message, f=force, l=local,
-                          remove=remove, d=date, u=user)
+        args = cmdbuilder('tag', r=rev, m=message, f=force, l=local,
+                          remove=remove, d=date, u=user, *names)
 
         self.rawcommand(args)
 
