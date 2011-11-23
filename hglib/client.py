@@ -27,6 +27,12 @@ class hgclient(object):
         self._readhello()
         self._version = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def _readhello(self):
         """ read the hello message the server sends when started """
         ch, msg = self._readchannel()
