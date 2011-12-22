@@ -1,16 +1,41 @@
-import subprocess, os, struct, cStringIO, collections, re
+import subprocess, os, struct, cStringIO, re
 import hglib, error, util, templates, merge
 
 from util import cmdbuilder
+
+class revision(tuple):
+    def __new__(cls, rev, node, tags, branch, author, desc):
+        return tuple.__new__(cls, (rev, node, tags, branch, author, desc))
+
+    @property
+    def rev(self):
+       return self[0]
+
+    @property
+    def node(self):
+       return self[1]
+
+    @property
+    def tags(self):
+       return self[2]
+
+    @property
+    def branch(self):
+       return self[3]
+
+    @property
+    def author(self):
+       return self[4]
+
+    @property
+    def desc(self):
+       return self[5]
 
 class hgclient(object):
     inputfmt = '>I'
     outputfmt = '>cI'
     outputfmtsize = struct.calcsize(outputfmt)
     retfmt = '>i'
-
-    revision = collections.namedtuple('revision', 'rev, node, tags, '
-                                                  'branch, author, desc')
 
     def __init__(self, path, encoding, configs):
         args = [hglib.HGPATH, 'serve', '--cmdserver', 'pipe',
@@ -68,7 +93,7 @@ class hgclient(object):
     def _parserevs(self, splitted):
         ''' splitted is a list of fields according to our rev.style, where each 6
         fields compose one revision. '''
-        return [self.revision._make(rev) for rev in util.grouper(6, splitted)]
+        return [revision(*rev) for rev in util.grouper(6, splitted)]
 
     def runcommand(self, args, inchannels, outchannels):
         def writeblock(data):
