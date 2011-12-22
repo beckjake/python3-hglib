@@ -1,5 +1,5 @@
 import subprocess, os, struct, cStringIO, re
-import hglib, error, util, templates, merge
+import hglib, error, util, templates, merge, context
 
 from util import cmdbuilder
 
@@ -1520,3 +1520,6 @@ class hgclient(object):
             self._version = tuple(v)
 
         return self._version
+
+    def __getitem__(self, changeid):
+        return context.changectx(self, changeid)

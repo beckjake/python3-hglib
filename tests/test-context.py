@@ -13,7 +13,7 @@ class test_context(common.basetest):
         self.append('c', 'c')
         rev1, node1 = self.client.commit('second', addremove=True)
 
-        ctx = context.changectx(self.client, node0)
+        ctx = self.client[node0]
 
         self.assertEquals(ctx.description(), 'first')
         self.assertEquals(str(ctx), node0[:12])
@@ -52,7 +52,7 @@ class test_context(common.basetest):
 
         self.client.tag('tag', rev=node0)
         # tags are read on construction
-        self.assertEquals(context.changectx(self.client, node0).tags(), ['tag'])
+        self.assertEquals(self.client[node0].tags(), ['tag'])
 
     def test_construction(self):
         self.append('a', 'a')
