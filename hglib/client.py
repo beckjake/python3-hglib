@@ -37,20 +37,22 @@ class hgclient(object):
     outputfmtsize = struct.calcsize(outputfmt)
     retfmt = '>i'
 
-    def __init__(self, path, encoding, configs):
-        args = [hglib.HGPATH, 'serve', '--cmdserver', 'pipe',
+    def __init__(self, path, encoding, configs, connect=True):
+        self._args = [hglib.HGPATH, 'serve', '--cmdserver', 'pipe',
                 '--config', 'ui.interactive=True']
         if path:
-            args += ['-R', path]
+            self._args += ['-R', path]
         if configs:
-            args += ['--config'] + configs
-        env = {}
+            self._args += ['--config'] + configs
+        self._env = {}
         if encoding:
-            env['HGENCODING'] = encoding
+            self._env['HGENCODING'] = encoding
 
-        self.server = util.popen(args, env)
-        self._readhello()
+        self.server = None
         self._version = None
+
+        if connect:
+            self.open()
 
     def __enter__(self):
         return self
@@ -163,6 +165,14 @@ class hgclient(object):
             else:
                 return eh(ret, out, err)
         return out
+
+    def open(self):
+        if self.server is not None:
+            raise ValueError('server already open')
+
+        self.server = util.popen(self._args, self._env)
+        self._readhello()
+        return self
 
     def close(self):
         """
