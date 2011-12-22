@@ -19,4 +19,4 @@ def init(dest=None, ssh=None, remotecmd=None, insecure=False,
     if proc.returncode:
         raise error.CommandError(args, proc.returncode, out, err)
 
-    return open(dest, encoding, configs)
+    return client.hgclient(dest, encoding, configs, connect=False)

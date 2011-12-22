@@ -9,5 +9,5 @@ class test_init(common.basetest):
         self.client = None
         shutil.rmtree('.hg')
 
-        self.client = hglib.init()
+        self.client = hglib.init().open()
         self.assertTrue(self.client.root().endswith('test_init'))
