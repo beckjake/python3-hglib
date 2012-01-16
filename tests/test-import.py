@@ -1,4 +1,4 @@
-import common, cStringIO
+import common, cStringIO, os
 import hglib
 
 patch = """
@@ -23,5 +23,13 @@ class test_import(common.basetest):
 
     def test_basic_file(self):
         open('patch', 'wb').write(patch)
+
+        # --no-commit
+        self.client.import_(['patch'], nocommit=True)
+        self.assertEquals(open('a').read(), '1\n')
+
+        self.client.update(clean=True)
+        os.remove('a')
+
         self.client.import_(['patch'])
         self.assertEquals(self.client.cat(['a']), '1\n')

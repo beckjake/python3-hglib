@@ -834,7 +834,7 @@ class hgclient(object):
             input = None
 
         args = cmdbuilder('import', strip=strip, force=force,
-                          nocommit=nocommit, bypass=bypass, exact=exact,
+                          no_commit=nocommit, bypass=bypass, exact=exact,
                           importbranch=importbranch, message=message,
                           date=date, user=user, similarity=similarity, _=stdin,
                           *patches)
