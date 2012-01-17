@@ -2,7 +2,6 @@ import os, tempfile, sys, shutil
 
 def setUp():
     os.environ['LANG'] = os.environ['LC_ALL'] = os.environ['LANGUAGE'] = 'C'
-    os.environ['TZ'] = 'GMT'
     os.environ["EMAIL"] = "Foo Bar <foo.bar@example.com>"
     os.environ['CDPATH'] = ''
     os.environ['COLUMNS'] = '80'
