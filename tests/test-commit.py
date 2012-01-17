@@ -1,4 +1,4 @@
-import common, hglib
+import common, hglib, datetime
 
 class test_commit(common.basetest):
     def test_user(self):
@@ -30,3 +30,11 @@ class test_commit(common.basetest):
     def test_message_logfile(self):
         self.assertRaises(ValueError, self.client.commit, 'foo', logfile='bar')
         self.assertRaises(ValueError, self.client.commit)
+
+    def test_date(self):
+        self.append('a', 'a')
+        now = datetime.datetime.now().replace(microsecond=0)
+        rev0, node0 = self.client.commit('first', addremove=True,
+                                         date=now.isoformat(' '))
+
+        self.assertEquals(now, self.client.tip().date)

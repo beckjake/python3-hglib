@@ -1,11 +1,11 @@
-import subprocess, os, struct, cStringIO, re
+import subprocess, os, struct, cStringIO, re, datetime
 import hglib, error, util, templates, merge, context
 
 from util import cmdbuilder
 
 class revision(tuple):
-    def __new__(cls, rev, node, tags, branch, author, desc):
-        return tuple.__new__(cls, (rev, node, tags, branch, author, desc))
+    def __new__(cls, rev, node, tags, branch, author, desc, date):
+        return tuple.__new__(cls, (rev, node, tags, branch, author, desc, date))
 
     @property
     def rev(self):
@@ -30,6 +30,10 @@ class revision(tuple):
     @property
     def desc(self):
         return self[5]
+
+    @property
+    def date(self):
+        return self[6]
 
 class hgclient(object):
     inputfmt = '>I'
@@ -95,7 +99,13 @@ class hgclient(object):
     def _parserevs(self, splitted):
         ''' splitted is a list of fields according to our rev.style, where each 6
         fields compose one revision. '''
-        return [revision(*rev) for rev in util.grouper(6, splitted)]
+        revs = []
+        for rev in util.grouper(7, splitted):
+            # truncate the timezone and convert to a local datetime
+            posixtime = float(rev[6].split('.', 1)[0])
+            dt = datetime.datetime.fromtimestamp(posixtime)
+            revs.append(revision(rev[0], rev[1], rev[2], rev[3], rev[4], rev[5], dt))
+        return revs
 
     def runcommand(self, args, inchannels, outchannels):
         def writeblock(data):

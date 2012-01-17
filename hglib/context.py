@@ -1,6 +1,6 @@
 import client, util, templates
 
-_nullcset = ['-1', '000000000000000000000000000000000000000', '', '', '', '']
+_nullcset = ['-1', '000000000000000000000000000000000000000', '', '', '', '', '']
 
 class changectx(object):
     """A changecontext object makes access to data related to a particular
@@ -26,7 +26,7 @@ class changectx(object):
             cset = cset[0]
 
         self._rev, self._node, self._tags = cset[:3]
-        self._branch, self._author, self._description = cset[3:]
+        self._branch, self._author, self._description, self._date = cset[3:]
 
         self._rev = int(self._rev)
 
