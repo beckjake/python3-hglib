@@ -96,7 +96,8 @@ class hgclient(object):
         else:
             return channel, self.server.stdout.read(length)
 
-    def _parserevs(self, splitted):
+    @staticmethod
+    def _parserevs(splitted):
         ''' splitted is a list of fields according to our rev.style, where each 6
         fields compose one revision. '''
         revs = []
