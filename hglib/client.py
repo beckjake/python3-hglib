@@ -9,27 +9,27 @@ class revision(tuple):
 
     @property
     def rev(self):
-       return self[0]
+        return self[0]
 
     @property
     def node(self):
-       return self[1]
+        return self[1]
 
     @property
     def tags(self):
-       return self[2]
+        return self[2]
 
     @property
     def branch(self):
-       return self[3]
+        return self[3]
 
     @property
     def author(self):
-       return self[4]
+        return self[4]
 
     @property
     def desc(self):
-       return self[5]
+        return self[5]
 
 class hgclient(object):
     inputfmt = '>I'
