@@ -2,13 +2,13 @@ import os, sys, tempfile, shutil
 import unittest
 
 import hglib
+from hglib import client
 
 def resultappender(list):
     def decorator(f):
         def decorated(*args, **kwargs):
-            result = f(*args, **kwargs)
-            list.append(result)
-            return result
+            list.append(args[0])
+            return f(*args, **kwargs)
         return decorated
     return decorator
 
@@ -18,8 +18,9 @@ class basetest(unittest.TestCase):
             os.path.join(os.environ["HGTMP"], self.__class__.__name__)
 
         self.clients = []
-        self._oldopen = hglib.open
-        hglib.open = resultappender(self.clients)(hglib.open)
+        self._oldopen = hglib.client.hgclient.open
+        # hglib.open = resultappender(self.clients)(hglib.open)
+        hglib.client.hgclient.open = resultappender(self.clients)(hglib.client.hgclient.open)
 
         os.mkdir(self._testtmp)
         os.chdir(self._testtmp)
@@ -30,7 +31,7 @@ class basetest(unittest.TestCase):
     def tearDown(self):
         # on Windows we cannot rmtree before closing all instances because of used
         # files
-        hglib.open = self._oldopen
+        hglib.client.hgclient.open = self._oldopen
         for client in self.clients:
             if client.server is not None:
                 client.close()
