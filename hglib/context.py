@@ -205,4 +205,4 @@ class changectx(object):
         """
         return the ancestor context of self and c2
         """
-        return changectx(self._repo, 'ancestor(%s, %s)' % (self, n2))
+        return changectx(self._repo, 'ancestor(%s, %s)' % (self, c2))
