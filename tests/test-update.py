@@ -66,3 +66,7 @@ class test_update(common.basetest):
         u, m, r, ur = self.client.update(clean=True)
         self.assertEquals(u, 1)
         self.assertEquals(old, open('a').read())
+
+    def test_basic_plain(self):
+        open('.hg/hgrc', 'a').write('[defaults]\nupdate=-v\n')
+        self.test_basic()

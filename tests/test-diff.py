@@ -38,3 +38,7 @@ class test_diff(common.basetest):
 +a
 """ % (node0[:12], node1[:12])
         self.assertEquals(diff4, self.client.diff(revs=[rev0, rev1], nodates=True))
+
+    def test_basic_plain(self):
+        open('.hg/hgrc', 'a').write('[defaults]\ndiff=--git\n')
+        self.test_basic()
