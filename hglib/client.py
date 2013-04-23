@@ -1505,11 +1505,8 @@ class hgclient(object):
 
         out = self.rawcommand(args, eh=eh)
 
-        # filter out 'merging ...' lines
-        out = util.skiplines(out, 'merging ')
-
-        counters = out.rstrip().split(', ')
-        return tuple(int(s.split(' ', 1)[0]) for s in counters)
+        m = re.search(r'^(\d+).+, (\d+).+, (\d+).+, (\d+)', out, re.MULTILINE)
+        return tuple(map(int,list(m.groups())))
 
     @property
     def version(self):

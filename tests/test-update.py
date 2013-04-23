@@ -70,3 +70,19 @@ class test_update(common.basetest):
     def test_basic_plain(self):
         open('.hg/hgrc', 'a').write('[defaults]\nupdate=-v\n')
         self.test_basic()
+
+    def test_largefiles(self):
+        import os
+        open('.hg/hgrc', 'a').write('[extensions]\nlargefiles=\n')
+        self.append('b', 'a')
+        self.client.rawcommand(['add', 'b', '--large'])
+        rev2, node2 = self.client.commit('third')
+        # Go back to 0
+        self.client.rawcommand(['update', str(self.rev0)],
+                                # Keep the 'changed' version
+                               prompt=lambda s, d: 'c\n')
+        u, m, r, ur = self.client.update(rev2, clean=True)
+        self.assertEquals(u, 2)
+        self.assertEquals(m, 0)
+        self.assertEquals(r, 0)
+        self.assertEquals(ur, 0)
