@@ -1,3 +1,4 @@
+from hglib.error import CommandError
 import client, util, templates
 
 _nullcset = ['-1', '000000000000000000000000000000000000000', '', '', '', '', '']
@@ -18,8 +19,13 @@ class changectx(object):
             if isinstance(changeid, (long, int)):
                 changeid = 'rev(%d)' % changeid
 
-            cset = self._repo.log(changeid)
-            if not len(cset):
+            notfound = False
+            try:
+                cset = self._repo.log(changeid)
+            except CommandError:
+                notfound = True
+
+            if notfound or not len(cset):
                 raise ValueError('changeid %r not found in repo' % changeid)
             if len(cset) > 1:
                 raise ValueError('changeid must yield a single changeset')

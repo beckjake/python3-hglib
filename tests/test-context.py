@@ -1,9 +1,10 @@
+from hglib.error import CommandError
 import common, hglib
 from hglib import context
 
 class test_context(common.basetest):
     def test_non_existent(self):
-        self.assertRaises(ValueError, context.changectx, self.client, 'foo')
+        self.assertRaisesRegexp(ValueError, 'not found', context.changectx, self.client, 'foo')
 
     def test_basic(self):
         self.append('a', 'a')
