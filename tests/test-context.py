@@ -4,7 +4,7 @@ from hglib import context
 
 class test_context(common.basetest):
     def test_non_existent(self):
-        self.assertRaisesRegexp(ValueError, 'not found', context.changectx, self.client, 'foo')
+        self.assertRaises(ValueError, context.changectx, self.client, 'foo')
 
     def test_basic(self):
         self.append('a', 'a')
