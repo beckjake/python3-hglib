@@ -15,9 +15,9 @@ class test_bookmarks(common.basetest):
                           ([('zero', rev0, node0[:12])], -1))
 
         self.client.bookmark('one', rev1)
-        self.assertEquals(self.client.bookmarks(),
-                          ([('one', rev1, node1[:12]),
-                            ('zero', rev0, node0[:12])], -1))
+        self.assertEquals(self.client.bookmarks()[0],
+                          [('one', rev1, node1[:12]),
+                           ('zero', rev0, node0[:12])])
 
     #def test_spaces(self):
     #    self.client.bookmark('s pace', self.rev0)
