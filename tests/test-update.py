@@ -75,7 +75,11 @@ class test_update(common.basetest):
         import os
         open('.hg/hgrc', 'a').write('[extensions]\nlargefiles=\n')
         self.append('b', 'a')
-        self.client.rawcommand(['add', 'b', '--large'])
+        try:
+            self.client.rawcommand(['add', 'b', '--large'])
+        except error.CommandError:
+            return
+
         rev2, node2 = self.client.commit('third')
         # Go back to 0
         self.client.rawcommand(['update', str(self.rev0)],
