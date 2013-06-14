@@ -6,7 +6,7 @@ class CommandError(Exception):
         self.err = err
 
     def __str__(self):
-        return self.err
+        return str((self.ret, self.out.rstrip(), self.err.rstrip()))
 
 class ServerError(Exception):
     pass
