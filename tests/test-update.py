@@ -33,7 +33,9 @@ class test_update(common.basetest):
         self.client.commit('fourth')
         self.client.update(rev2)
         old = open('a').read()
-        open('a', 'wb').write('a' + old)
+        f = open('a', 'wb')
+        f.write('a' + old)
+        f.close()
         u, m, r, ur = self.client.update()
         self.assertEquals(u, 0)
         self.assertEquals(m, 1)
@@ -68,12 +70,16 @@ class test_update(common.basetest):
         self.assertEquals(old, open('a').read())
 
     def test_basic_plain(self):
-        open('.hg/hgrc', 'a').write('[defaults]\nupdate=-v\n')
+        f = open('.hg/hgrc', 'a')
+        f.write('[defaults]\nupdate=-v\n')
+        f.close()
         self.test_basic()
 
     def test_largefiles(self):
         import os
-        open('.hg/hgrc', 'a').write('[extensions]\nlargefiles=\n')
+        f = open('.hg/hgrc', 'a')
+        f.write('[extensions]\nlargefiles=\n')
+        f.close()
         self.append('b', 'a')
         try:
             self.client.rawcommand(['add', 'b', '--large'])

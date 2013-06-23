@@ -3,7 +3,9 @@ import hglib
 
 class test_paths(common.basetest):
     def test_basic(self):
-        open('.hg/hgrc', 'a').write('[paths]\nfoo = bar\n')
+        f = open('.hg/hgrc', 'a')
+        f.write('[paths]\nfoo = bar\n')
+        f.close()
 
         # hgrc isn't watched for changes yet, have to reopen
         self.client = hglib.open()

@@ -3,7 +3,9 @@ import os, common, hglib
 class test_config(common.basetest):
     def setUp(self):
         common.basetest.setUp(self)
-        open('.hg/hgrc', 'a').write('[section]\nkey=value\n')
+        f = open('.hg/hgrc', 'a')
+        f.write('[section]\nkey=value\n')
+        f.close()
         self.client = hglib.open()
 
     def test_basic(self):

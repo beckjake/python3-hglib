@@ -22,7 +22,9 @@ class test_import(common.basetest):
         self.assertEquals(self.client.cat(['a']), '1\n')
 
     def test_basic_file(self):
-        open('patch', 'wb').write(patch)
+        f = open('patch', 'wb')
+        f.write(patch)
+        f.close()
 
         # --no-commit
         self.client.import_(['patch'], nocommit=True)
