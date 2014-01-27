@@ -944,7 +944,7 @@ class hgclient(object):
         args = cmdbuilder('log', template=templates.changeset,
                           r=revrange, f=follow, follow_first=followfirst,
                           d=date, C=copies, k=keyword, removed=removed,
-                          m=onlymerges, u=user, b=branch, P=prune, h=hidden,
+                          m=onlymerges, u=user, b=branch, P=prune, hidden=hidden,
                           l=limit, M=nomerges, I=include, X=exclude, *files)
 
         out = self.rawcommand(args)
