@@ -67,3 +67,23 @@ class test_context(common.basetest):
         # from revset
         ctx = context.changectx(self.client, 'all()')
         self.assertEquals(ctx.node(), tip.node)
+
+    def test_in_keyword(self):
+        """
+        test the 'in' keyword using both revision numbers or changeset ids.
+        """
+        self.append('a', 'a')
+        rev0, node0 = self.client.commit('first', addremove=True)
+        self.append('a', 'a')
+        rev1, node1 = self.client.commit('second')
+
+        self.assertIn(1, self.client)
+        hash_1 = self.client.log(0)[0][1]
+        self.assertIn(hash_1, self.client)
+        self.assertNotIn(2, self.client)
+        hash_2 = self.client.log(1)[0][1]
+        self.assertIn(hash_2,self.client)
+        hash_2 = 'deadbeef'
+        self.assertNotIn(hash_2, self.client)
+
+

@@ -1531,3 +1531,14 @@ class hgclient(object):
 
     def __getitem__(self, changeid):
         return context.changectx(self, changeid)
+
+    def __contains__(self, changeid):
+        """
+        check if changeid, which can be either a local revision number or a
+        changeset id, matches a changeset in the client.
+        """
+        try:
+            context.changectx(self, changeid)
+            return True
+        except ValueError:
+            return False
