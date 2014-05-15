@@ -194,6 +194,11 @@ class changectx(object):
     def bookmarks(self):
         return self._bookmarks
 
+    def hidden(self):
+        """return True if the changeset is hidden, else False"""
+        return bool(self._repo.log(revrange='%s and hidden()' % self._node,
+                                   hidden=True))
+
     def children(self):
         """return contexts for each child changeset"""
         for c in self._repo.log('children(%s)' % self._node):
