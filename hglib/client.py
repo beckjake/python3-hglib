@@ -1405,6 +1405,31 @@ class hgclient(object):
             t.append((name.rstrip(), int(rev), node, taglocal))
         return t
 
+    def phase(self, revs=(), secret=False, draft=False, public=False,
+              force=False):
+        '''Set or show the current phase name.
+
+        revs - target revision(s)
+        public - set changeset phase to public
+        draft - set changeset phase to draft
+        secret - set changeset phase to secret
+        force - allow to move boundary backward
+
+        output format: [(id, phase) ...] for each changeset
+
+        The arguments match the mercurial API.
+        '''
+        if not isinstance(revs, (list, tuple)):
+            revs = [revs]
+        args = util.cmdbuilder('phase', secret=secret, draft=draft,
+                               public=public, force=force, hidden=self.hidden, *revs)
+        out = self.rawcommand(args)
+        if draft or public or secret:
+            return
+        else:
+            output = [i.split(': ')for i in out.strip().split('\n')]
+            return [(int(num), phase) for (num, phase) in output]
+
     def summary(self, remote=False):
         """
         Return a dictionary with a brief summary of the working directory state,
