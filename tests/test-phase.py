@@ -7,25 +7,32 @@ class test_phase(common.basetest):
         self.append('a', 'a')
         rev, node0 = self.client.commit('first', addremove=True)
         self.assertEqual([(0, 'draft')], self.client.phase(node0))
+        ctx = self.client[rev]
+        self.assertEqual('draft', ctx.phase())
 
     def test_phase_public(self):
-        """phase change from draft to public"""
+        """test phase change from draft to public"""
         self.append('a', 'a')
         rev, node0 = self.client.commit('first', addremove=True)
         self.client.phase(node0, public=True)
         self.assertEqual([(0, 'public')], self.client.phase(node0))
+        ctx = self.client[rev]
+        self.assertEqual('public', ctx.phase())
 
     def test_phase_secret(self):
-        """phase change from draft to secret"""
+        """test phase change from draft to secret"""
         self.append('a', 'a')
         rev, node0 = self.client.commit('first', addremove=True)
         with self.assertRaises(hglib.error.CommandError):
             self.client.phase(node0, secret=True)
         self.client.phase(node0, secret=True, force=True)
         self.assertEqual([(0, 'secret')], self.client.phase(node0))
+        ctx = self.client[rev]
+        self.assertEqual('secret', ctx.phase())
+
 
     def test_phase_multiple(self):
-        """phase changes and show the phases of the different changesets"""
+        """test phase changes and show the phases of the different changesets"""
         self.append('a', 'a')
         rev, node0 = self.client.commit('a', addremove=True)
         self.client.phase(node0, public=True)

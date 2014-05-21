@@ -199,6 +199,10 @@ class changectx(object):
         return bool(self._repo.log(revrange='%s and hidden()' % self._node,
                                    hidden=True))
 
+    def phase(self):
+        """return the phase of the changeset (public, draft or secret)"""
+        return self._repo.phase(str(self._rev))[0][1]
+
     def children(self):
         """return contexts for each child changeset"""
         for c in self._repo.log('children(%s)' % self._node):
