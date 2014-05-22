@@ -54,6 +54,8 @@ class hgclient(object):
 
         self.server = None
         self._version = None
+        #include the hidden changesets if True 
+        self.hidden = None
 
         if connect:
             self.open()
@@ -282,7 +284,8 @@ class hgclient(object):
 
         args = cmdbuilder('annotate', r=rev, no_follow=nofollow, a=text,
                           u=user, f=file, d=date, n=number, c=changeset,
-                          l=line, v=verbose, I=include, X=exclude, *files)
+                          l=line, v=verbose, I=include, X=exclude,
+                          hidden=self.hidden, *files)
 
         out = self.rawcommand(args)
 
@@ -324,7 +327,8 @@ class hgclient(object):
         exclude - exclude names matching the given patterns
         """
         args = cmdbuilder('archive', dest, r=rev, no_decode=nodecode, p=prefix,
-                          t=type, S=subrepos, I=include, X=exclude)
+                          t=type, S=subrepos, I=include, X=exclude,
+                          hidden=self.hidden)
 
         self.rawcommand(args)
 
@@ -351,7 +355,8 @@ class hgclient(object):
             raise ValueError("cannot specify both a message and a logfile")
 
         args = cmdbuilder('backout', r=rev, merge=merge, parent=parent, t=tool,
-                          m=message, l=logfile, d=date, u=user)
+                          m=message, l=logfile, d=date, u=user,
+                          hidden=self.hidden)
 
         self.rawcommand(args)
 
@@ -380,7 +385,8 @@ class hgclient(object):
 
         If there isn't a current one, -1 is returned as the index.
         """
-        out = self.rawcommand(['bookmarks'])
+        args = cmdbuilder('bookmarks', hidden=self.hidden)
+        out = self.rawcommand(args)
 
         bms = []
         current = -1
@@ -429,7 +435,7 @@ class hgclient(object):
         active - show only branches that have unmerged heads
         closed - show normal and closed branches
         """
-        args = cmdbuilder('branches', a=active, c=closed)
+        args = cmdbuilder('branches', a=active, c=closed, hidden=self.hidden)
         out = self.rawcommand(args)
 
         branches = []
@@ -469,7 +475,7 @@ class hgclient(object):
         """
         args = cmdbuilder('bundle', file, destrepo, f=force, r=rev, b=branch,
                           base=base, a=all, t=type, e=ssh, remotecmd=remotecmd,
-                          insecure=insecure)
+                          insecure=insecure, hidden=self.hidden)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -490,7 +496,7 @@ class hgclient(object):
         "%d"  dirname of file being printed, or '.' if in repository root
         "%p"  root-relative path name of file being printed
         """
-        args = cmdbuilder('cat', r=rev, o=output, *files)
+        args = cmdbuilder('cat', r=rev, o=output, hidden=self.hidden, *files)
         out = self.rawcommand(args)
 
         if not output:
@@ -643,7 +649,8 @@ class hgclient(object):
                           p=showfunction, reverse=reverse,
                           w=ignoreallspace, b=ignorespacechange,
                           B=ignoreblanklines, U=unified, stat=stat,
-                          S=subrepos, I=include, X=exclude, *files)
+                          S=subrepos, I=include, X=exclude, hidden=self.hidden,
+                          *files)
 
         return self.rawcommand(args)
 
@@ -673,7 +680,8 @@ class hgclient(object):
         if not isinstance(revs, list):
             revs = [revs]
         args = cmdbuilder('export', o=output, switch_parent=switchparent,
-                          a=text, g=git, nodates=nodates, *revs)
+                          a=text, g=git, nodates=nodates, hidden=self.hidden,
+                          *revs)
 
         out = self.rawcommand(args)
 
@@ -732,7 +740,8 @@ class hgclient(object):
 
         args = cmdbuilder('grep', all=all, a=text, f=follow, i=ignorecase,
                           l=fileswithmatches, n=line, u=user, d=date,
-                          I=include, X=exclude, *[pattern] + files)
+                          I=include, X=exclude, hidden=self.hidden,
+                          *[pattern] + files)
         args.append('-0')
 
         def eh(ret, out, err):
@@ -773,7 +782,8 @@ class hgclient(object):
             rev = [rev]
 
         args = cmdbuilder('heads', r=startrev, t=topological, c=closed,
-                          template=templates.changeset, *rev)
+                          template=templates.changeset, hidden=self.hidden,
+                          *rev)
 
         def eh(ret, out, err):
             if ret != 1:
@@ -804,7 +814,7 @@ class hgclient(object):
         bookmarks - show bookmarks
         """
         args = cmdbuilder('identify', source, r=rev, n=num, i=id, b=branch, t=tags,
-                          B=bookmarks)
+                          B=bookmarks, hidden=self.hidden)
 
         return self.rawcommand(args)
 
@@ -902,7 +912,7 @@ class hgclient(object):
 
     def log(self, revrange=None, files=[], follow=False, followfirst=False,
             date=None, copies=False, keyword=None, removed=False, onlymerges=False,
-            user=None, branch=None, prune=None, hidden=False, limit=None,
+            user=None, branch=None, prune=None, hidden=None, limit=None,
             nomerges=False, include=None, exclude=None):
         """
         Return the revision history of the specified files or the entire project.
@@ -941,11 +951,14 @@ class hgclient(object):
         include - include names matching the given patterns
         exclude - exclude names matching the given patterns
         """
+        if hidden is None:
+            hidden = self.hidden
         args = cmdbuilder('log', template=templates.changeset,
                           r=revrange, f=follow, follow_first=followfirst,
                           d=date, C=copies, k=keyword, removed=removed,
-                          m=onlymerges, u=user, b=branch, P=prune, hidden=hidden,
-                          l=limit, M=nomerges, I=include, X=exclude, *files)
+                          m=onlymerges, u=user, b=branch, P=prune,
+                          l=limit, M=nomerges, I=include, X=exclude,
+                          hidden=hidden, *files)
 
         out = self.rawcommand(args)
         out = out.split('\0')[:-1]
@@ -962,7 +975,8 @@ class hgclient(object):
         When all is True, all files from all revisions are yielded (just the name).
         This includes deleted and renamed files.
         """
-        args = cmdbuilder('manifest', r=rev, all=all, debug=True)
+        args = cmdbuilder('manifest', r=rev, all=all, debug=True,
+                          hidden=self.hidden)
 
         out = self.rawcommand(args)
 
@@ -1094,7 +1108,8 @@ class hgclient(object):
         in which the file was last changed (before the working directory revision
         or the revision specified by rev) is returned.
         """
-        args = cmdbuilder('parents', file, template=templates.changeset, r=rev)
+        args = cmdbuilder('parents', file, template=templates.changeset, r=rev,
+                          hidden=self.hidden)
 
         out = self.rawcommand(args)
         if not out:
@@ -1277,7 +1292,7 @@ class hgclient(object):
 
         args = cmdbuilder('revert', r=rev, a=all, d=date,
                           no_backup=nobackup, n=dryrun, I=include, X=exclude,
-                          *files)
+                          hidden=self.hidden, *files)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -1327,7 +1342,8 @@ class hgclient(object):
 
         args = cmdbuilder('status', rev=rev, change=change, A=all, m=modified,
                           a=added, r=removed, d=deleted, c=clean, u=unknown,
-                          i=ignored, C=copies, S=subrepos, I=include, X=exclude)
+                          i=ignored, C=copies, S=subrepos, I=include,
+                          X=exclude, hidden=self.hidden)
 
         args.append('-0')
 
@@ -1366,7 +1382,8 @@ class hgclient(object):
             names = [names]
 
         args = cmdbuilder('tag', r=rev, m=message, f=force, l=local,
-                          remove=remove, d=date, u=user, *names)
+                          remove=remove, d=date, u=user, hidden=self.hidden,
+                          *names)
 
         self.rawcommand(args)
 
@@ -1402,7 +1419,7 @@ class hgclient(object):
 
             unparsed entries will be of them form key : value
         """
-        args = cmdbuilder('summary', remote=remote)
+        args = cmdbuilder('summary', remote=remote, hidden=self.hidden)
 
         out = self.rawcommand(args).splitlines()
 
@@ -1474,7 +1491,8 @@ class hgclient(object):
         changeset most recently added to the repository (and therefore the most
         recently changed head).
         """
-        args = cmdbuilder('tip', template=templates.changeset)
+        args = cmdbuilder('tip', template=templates.changeset,
+                          hidden=self.hidden)
         out = self.rawcommand(args)
         out = out.split('\0')
 
@@ -1494,7 +1512,8 @@ class hgclient(object):
         if clean and check:
             raise ValueError('clean and check cannot both be True')
 
-        args = cmdbuilder('update', r=rev, C=clean, c=check, d=date)
+        args = cmdbuilder('update', r=rev, C=clean, c=check, d=date,
+                          hidden=self.hidden)
 
         def eh(ret, out, err):
             if ret == 1:
