@@ -22,7 +22,7 @@ class changectx(object):
         elif changeid == -1:
             cset = _nullcset
         else:
-            if isinstance(changeid, (long, int)):
+            if isinstance(changeid, int):
                 changeid = 'rev(%d)' % changeid
 
             notfound = False
