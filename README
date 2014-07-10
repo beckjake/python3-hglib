@@ -1,3 +1,10 @@
+python3-hglib
+=============
+Python3-hglib is a port to support on Python 3.4.
+
+There are surely bugs, but it does pass all unit tests (on OSX)
+Whether you should trust them after my port (they changed too) is up for debate.
+
 python-hglib
 ============
 
@@ -7,3 +14,4 @@ It uses Mercurial's command server for communication with hg.
 Installation is standard:
 
   $ python setup.py install
+
