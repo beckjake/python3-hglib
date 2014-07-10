@@ -1,4 +1,5 @@
-import common, hglib, datetime
+from . import common
+import hglib, datetime
 
 class test_commit(common.basetest):
     def test_user(self):

@@ -1,4 +1,9 @@
-import itertools, cStringIO, error, os, subprocess
+import itertools, os, subprocess
+from . import error
+try:
+    import cStringIO
+except ImportError:
+    import io as cStringIO
 
 def grouper(n, iterable):
     ''' list(grouper(2, range(4))) -> [(0, 1), (2, 3)] '''

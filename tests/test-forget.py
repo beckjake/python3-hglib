@@ -1,4 +1,4 @@
-import common
+from . import common
 
 class test_forget(common.basetest):
     def test_basic(self):

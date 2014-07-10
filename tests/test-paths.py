@@ -1,4 +1,5 @@
-import common, os
+from . import common
+import os
 import hglib
 
 class test_paths(common.basetest):

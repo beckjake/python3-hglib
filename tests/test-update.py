@@ -1,4 +1,4 @@
-import common
+from . import common
 from hglib import error
 
 class test_update(common.basetest):

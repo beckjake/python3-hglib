@@ -1,4 +1,4 @@
-import common
+from . import common
 
 class test_diff(common.basetest):
     def test_basic(self):

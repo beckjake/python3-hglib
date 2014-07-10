@@ -1,4 +1,5 @@
-import common, os
+from . import common
+import os
 
 class test_move(common.basetest):
     def test_basic(self):

@@ -1,6 +1,9 @@
-import client, subprocess, util, error
-
+#must be before 'client'
 HGPATH = 'hg'
+
+from . import client, util, error
+import subprocess
+
 
 def open(path=None, encoding=None, configs=None):
     ''' starts a cmdserver for the given path (or for a repository found in the

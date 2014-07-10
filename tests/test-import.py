@@ -1,4 +1,5 @@
-import common, cStringIO, os
+from . import common
+import cStringIO, os
 import hglib
 
 patch = """

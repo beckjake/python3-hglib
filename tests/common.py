@@ -4,10 +4,10 @@ import unittest
 import hglib
 from hglib import client
 
-def resultappender(list):
+def resultappender(lst):
     def decorator(f):
         def decorated(*args, **kwargs):
-            list.append(args[0])
+            lst.append(args[0])
             return f(*args, **kwargs)
         return decorated
     return decorator

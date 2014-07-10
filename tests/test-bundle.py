@@ -1,4 +1,4 @@
-import common
+from . import common
 
 class test_bundle(common.basetest):
     def test_no_changes(self):

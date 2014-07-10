@@ -1,4 +1,4 @@
-import common
+from . import common
 
 class test_parents(common.basetest):
     def test_noparents(self):

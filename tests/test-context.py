@@ -1,5 +1,6 @@
 from hglib.error import CommandError
-import common, hglib
+from . import common
+import hglib
 from hglib import context
 
 class test_context(common.basetest):

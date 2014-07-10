@@ -1,4 +1,5 @@
-import os, common, hglib
+import os, hglib
+from . import common
 
 class test_config(common.basetest):
     def setUp(self):

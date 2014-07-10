@@ -1,4 +1,4 @@
-import common
+from . import common
 import hglib
 
 class test_summary(common.basetest):

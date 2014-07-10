@@ -1,4 +1,5 @@
-import common, hglib
+from . import common
+import hglib
 
 class test_hglib(common.basetest):
     def setUp(self):

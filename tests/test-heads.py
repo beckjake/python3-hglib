@@ -1,4 +1,4 @@
-import common
+from . import common
 
 class test_heads(common.basetest):
     def test_empty(self):

@@ -1,4 +1,5 @@
-import common, hglib
+from . import common
+import hglib
 
 class test_phase(common.basetest):
     """test the different ways to use the phase command"""

@@ -1,4 +1,5 @@
-import common, hglib
+from . import common
+import hglib
 
 class test_pull(common.basetest):
     def test_basic(self):
