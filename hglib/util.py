@@ -1,10 +1,6 @@
 import itertools, os, subprocess
 from . import error
-
-try:
-    import cStringIO
-except ImportError:
-    import io as cStringIO
+import io
 
 
 def grouper(n, iterable):
@@ -23,7 +19,7 @@ def eatlines(s, n):
     >>> eatlines("1\\n2\\n3", 1)
     '2\\n3'
     """
-    cs = cStringIO.StringIO(s)
+    cs = io.StringIO(s)
 
     for line in cs:
         n -= 1
@@ -44,7 +40,7 @@ def skiplines(s, prefix):
     >>> skiplines('a\\nb', 'b')
     'a\\nb'
     """
-    cs = cStringIO.StringIO(s)
+    cs = io.StringIO(s)
 
     for line in cs:
         if not line.startswith(prefix):

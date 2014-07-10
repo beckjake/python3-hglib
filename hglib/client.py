@@ -1,9 +1,6 @@
 import subprocess, os, struct, re, datetime
 from . import HGPATH, error, util, templates, merge
-try:
-    import cStringIO
-except ImportError:
-    import io as cStringIO
+import io
 
 from .util import cmdbuilder
 
@@ -384,7 +381,7 @@ class hgclient(object):
         It receives the max number of bytes to return
         """
 
-        out, err = cStringIO.StringIO(), cStringIO.StringIO()
+        out, err = io.StringIO(), io.StringIO()
         outchannels = {'o' : out.write, 'e' : err.write}
 
         inchannels = {}
