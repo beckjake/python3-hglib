@@ -1,7 +1,7 @@
 from hglib.error import CommandError
 from . import common
 import hglib
-from hglib import context
+from hglib import client as context
 
 class test_context(common.basetest):
     def test_non_existent(self):

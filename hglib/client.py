@@ -28,7 +28,7 @@ class changectx(object):
             notfound = False
             try:
                 cset = self._repo.log(changeid)
-            except CommandError:
+            except error.CommandError:
                 notfound = True
 
             if notfound or not len(cset):
