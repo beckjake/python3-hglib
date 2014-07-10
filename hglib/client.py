@@ -315,14 +315,15 @@ class hgclient(object):
                                       ", got %r" % msg[1])
 
     def _readchannel(self):
-        data = self.server.stdout.read(hgclient.outputfmtsize)
+        data = self.server.stdout.read(hgclient.outputfmtsize).decode('latin-1')
         if not data:
             raise error.ServerError()
-        channel, length = struct.unpack(hgclient.outputfmt, data)
+        channel, length = struct.unpack(hgclient.outputfmt, data.encode('latin-1'))
+        channel = channel.decode('latin-1')
         if channel in 'IL':
             return channel, length
         else:
-            return channel, self.server.stdout.read(length)
+            return channel, self.server.stdout.read(length).decode('latin-1')
 
     @staticmethod
     def _parserevs(splitted):
@@ -339,13 +340,13 @@ class hgclient(object):
     def runcommand(self, args, inchannels, outchannels):
         def writeblock(data):
             self.server.stdin.write(struct.pack(self.inputfmt, len(data)))
-            self.server.stdin.write(data)
+            self.server.stdin.write(data.encode('latin-1'))
             self.server.stdin.flush()
 
         if not self.server:
             raise ValueError("server not connected")
 
-        self.server.stdin.write('runcommand\n')
+        self.server.stdin.write(b'runcommand\n')
         writeblock('\0'.join(args))
 
         while True:
@@ -359,14 +360,14 @@ class hgclient(object):
                 outchannels[channel](data)
             # result channel, command finished
             elif channel == 'r':
-                return struct.unpack(hgclient.retfmt, data)[0]
+                return struct.unpack(hgclient.retfmt, data.encode('latin-1'))[0]
             # a channel that we don't know and can't ignore
             elif channel.isupper():
                 raise error.ResponseError("unexpected data on required channel '%s'"
                                           % channel)
             # optional channel
             else:
-                pass
+                print('unexpected channel???: {}'.format(channel))
 
     def rawcommand(self, args, eh=None, prompt=None, input=None):
         """
@@ -395,14 +396,21 @@ class hgclient(object):
         if input is not None:
             inchannels['I'] = input
 
+        #print('running command')
         ret = self.runcommand(args, inchannels, outchannels)
-        out, err = out.getvalue(), err.getvalue()
+        #print('waiting for out')
+        out = out.getvalue()
+        #print('waiting for err')
+        err = err.getvalue()
+        #out, err = out.getvalue(), err.getvalue()
 
+        #print('out={}'.format(out))
         if ret:
             if eh is None:
                 raise error.CommandError(args, ret, out, err)
             else:
                 return eh(ret, out, err)
+
         return out
 
     def open(self):

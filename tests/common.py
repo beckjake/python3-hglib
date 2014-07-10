@@ -44,5 +44,7 @@ class basetest(unittest.TestCase):
     def append(self, path, *args):
         f = open(path, 'ab')
         for a in args:
-            f.write(str(a))
+            if isinstance(a, str):
+                a = a.encode('latin-1')
+            f.write(a)
         f.close()

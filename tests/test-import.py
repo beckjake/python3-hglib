@@ -1,8 +1,9 @@
 from . import common
-import cStringIO, os
+import os
+import io as cStringIO
 import hglib
 
-patch = """
+patch = b"""
 # HG changeset patch
 # User test
 # Date 0 0
