@@ -1,5 +1,7 @@
 from . import common
-import hglib, os, stat
+import hglib
+import os
+import stat
 
 class test_manifest(common.basetest):
     def test_basic(self):

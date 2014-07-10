@@ -1,8 +1,17 @@
-import subprocess, os, struct, re, datetime
-from . import HGPATH, error, util, templates, merge
+import subprocess
+import os
+import struct
+import re
+import datetime
 import io
 
-from .util import cmdbuilder
+from . import HGPATH
+from . import error
+from . import util
+from . import templates
+from . import merge
+
+cmdbuilder = util.cmdbuilder
 
 _nullcset = ['-1', '000000000000000000000000000000000000000', '', '', '', '', '']
 

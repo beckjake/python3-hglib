@@ -1,5 +1,6 @@
 from . import common
-import hglib, datetime
+import hglib
+import datetime
 from hglib.error import CommandError
 
 class test_obsolete_reference(common.basetest):

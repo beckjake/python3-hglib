@@ -1,8 +1,11 @@
-import os, sys, tempfile, shutil
+import os
+import sys
+import tempfile
+import shutil
 import unittest
 
 import hglib
-from hglib import client
+client = hglib.client
 
 def resultappender(lst):
     def decorator(f):

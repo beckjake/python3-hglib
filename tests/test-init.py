@@ -1,5 +1,6 @@
 from . import common
-import hglib, shutil
+import hglib
+import shutil
 
 class test_init(common.basetest):
     def test_exists(self):

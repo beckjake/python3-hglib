@@ -1,4 +1,7 @@
-import os, tempfile, sys, shutil
+import os
+import tempfile
+import sys
+import shutil
 
 def setUp():
     os.environ['LANG'] = os.environ['LC_ALL'] = os.environ['LANGUAGE'] = 'C'

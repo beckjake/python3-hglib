@@ -1,11 +1,10 @@
 from hglib.error import CommandError
 from . import common
-import hglib
-from hglib import client as context
+from hglib import client
 
 class test_context(common.basetest):
     def test_non_existent(self):
-        self.assertRaises(ValueError, context.changectx, self.client, 'foo')
+        self.assertRaises(ValueError, client.changectx, self.client, 'foo')
 
     def test_basic(self):
         self.append('a', 'a')
@@ -62,11 +61,11 @@ class test_context(common.basetest):
         tip = self.client.tip()
 
         # from client.revision
-        ctx = context.changectx(self.client, tip)
+        ctx = client.changectx(self.client, tip)
         self.assertEquals(ctx.node(), tip.node)
 
         # from revset
-        ctx = context.changectx(self.client, 'all()')
+        ctx = client.changectx(self.client, 'all()')
         self.assertEquals(ctx.node(), tip.node)
 
     def test_in_keyword(self):

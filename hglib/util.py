@@ -1,4 +1,6 @@
-import itertools, os, subprocess
+import itertools
+import os
+import subprocess
 from . import error
 import io
 
