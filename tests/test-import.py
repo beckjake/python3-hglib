@@ -1,6 +1,6 @@
 from . import common
 import os
-import io as cStringIO
+import io
 import hglib
 
 patch = b"""
@@ -20,7 +20,7 @@ diff -r 000000000000 -r c103a3dec114 a
 
 class test_import(common.basetest):
     def test_basic_cstringio(self):
-        self.client.import_(cStringIO.StringIO(patch))
+        self.client.import_(io.BytesIO(patch))
         self.assertEquals(self.client.cat(['a']), '1\n')
 
     def test_basic_file(self):

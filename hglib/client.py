@@ -75,7 +75,7 @@ class changectx(object):
     def __ne__(self, other):
         return not (self == other)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self._rev != -1
 
     def __contains__(self, key):
@@ -367,7 +367,7 @@ class hgclient(object):
                                           % channel)
             # optional channel
             else:
-                print('unexpected channel???: {}'.format(channel))
+                pass
 
     def rawcommand(self, args, eh=None, prompt=None, input=None):
         """
@@ -391,20 +391,14 @@ class hgclient(object):
         if prompt is not None:
             def func(size):
                 reply = prompt(size, out.getvalue())
-                return str(reply)
+                return reply.decode('latin-1')
             inchannels['L'] = func
         if input is not None:
             inchannels['I'] = input
 
-        #print('running command')
         ret = self.runcommand(args, inchannels, outchannels)
-        #print('waiting for out')
-        out = out.getvalue()
-        #print('waiting for err')
-        err = err.getvalue()
-        #out, err = out.getvalue(), err.getvalue()
+        out, err = out.getvalue(), err.getvalue()
 
-        #print('out={}'.format(out))
         if ret:
             if eh is None:
                 raise error.CommandError(args, ret, out, err)
@@ -1257,7 +1251,7 @@ class hgclient(object):
         elif cb is merge.handlers.noninteractive:
             args.append('-y')
         else:
-            prompt = lambda size, output: cb(output) + '\n'
+            prompt = lambda size, output: cb(output) + b'\n'
 
         self.rawcommand(args, prompt=prompt)
 

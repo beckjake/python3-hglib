@@ -58,7 +58,7 @@ class test_merge(common.basetest):
         rev, node = self.client.commit('remove')
 
         def cb(output):
-            return 'c'
+            return b'c'
 
         self.client.merge(cb=cb)
 

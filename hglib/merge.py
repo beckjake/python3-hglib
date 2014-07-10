@@ -10,7 +10,7 @@ class handlers(object):
         """
         Abort the merge if a prompt appears.
         """
-        return ''
+        return b''
 
     """
     This corresponds to Mercurial's -y/--noninteractive global option, which

@@ -90,7 +90,7 @@ class test_update(common.basetest):
         # Go back to 0
         self.client.rawcommand(['update', str(self.rev0)],
                                 # Keep the 'changed' version
-                               prompt=lambda s, d: 'c\n')
+                               prompt=lambda s, d: b'c\n')
         u, m, r, ur = self.client.update(rev2, clean=True)
         self.assertEquals(u, 2)
         self.assertEquals(m, 0)

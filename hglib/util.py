@@ -137,7 +137,7 @@ class reterrorhandler(object):
             raise error.CommandError(self.args, ret, out, err)
         return out
 
-    def __nonzero__(self):
+    def __bool__(self):
         """ Returns True if the return code was 0, False otherwise """
         return self.ret == 0
 
