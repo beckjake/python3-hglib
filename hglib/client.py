@@ -13,7 +13,7 @@ from . import merge
 
 cmdbuilder = util.cmdbuilder
 
-_nullcset = ['-1', '000000000000000000000000000000000000000', '', '', '', '', '']
+_nullcset = ['-1', '0'*39, '', '', '', '', '']
 
 class changectx(object):
     """A changecontext object makes access to data related to a particular
@@ -79,7 +79,7 @@ class changectx(object):
             return False
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def __bool__(self):
         return self._rev != -1
@@ -275,7 +275,7 @@ class hgclient(object):
 
     def __init__(self, path, encoding, configs, connect=True):
         self._args = [HGPATH, 'serve', '--cmdserver', 'pipe',
-                '--config', 'ui.interactive=True']
+                      '--config', 'ui.interactive=True']
         if path:
             self._args += ['-R', path]
         if configs:
@@ -286,8 +286,9 @@ class hgclient(object):
 
         self.server = None
         self._version = None
-        #include the hidden changesets if True 
+        #include the hidden changesets if True
         self.hidden = None
+        self._encoding = encoding
 
         if connect:
             self.open()
@@ -301,14 +302,14 @@ class hgclient(object):
     def _readhello(self):
         """ read the hello message the server sends when started """
         ch, msg = self._readchannel()
-        assert ch == 'o'
+        assert ch == b'o'
 
         msg = msg.split('\n')
 
         self.capabilities = msg[0][len('capabilities: '):]
         if not self.capabilities:
-            raise error.ResponseError("bad hello message: expected 'capabilities: '"
-                                      ", got %r" % msg[0])
+            raise error.ResponseError("bad hello message: expected '"
+                                      "capabilities: ', got %r" % msg[0])
 
         self.capabilities = set(self.capabilities.split())
 
@@ -320,27 +321,39 @@ class hgclient(object):
             raise error.ResponseError("bad hello message: expected 'encoding: '"
                                       ", got %r" % msg[1])
 
-    def _readchannel(self):
-        data = self.server.stdout.read(hgclient.outputfmtsize).decode('latin-1')
+    def _read_stdout(self, size):
+        data = self.server.stdout.read(size)
+        if self._encoding:
+            try:
+                return data.decode(self._encoding)
+            except UnicodeError:
+                self._encoding = None
+        #arbitrary 1-byte encoding, hope for the best!
+        return data.decode('latin-1')
+
+    def _readchannel(self) -> (bytes, bytes):
+        #data is bytes
+        data = self.server.stdout.read(hgclient.outputfmtsize)
         if not data:
             raise error.ServerError()
-        channel, length = struct.unpack(hgclient.outputfmt, data.encode('latin-1'))
-        channel = channel.decode('latin-1')
-        if channel in 'IL':
+        #data is bytes, channel is unicode
+        channel, length = struct.unpack(hgclient.outputfmt, data)
+        if channel in b'IL':
             return channel, length
         else:
-            return channel, self.server.stdout.read(length).decode('latin-1')
+            return channel, self._read_stdout(length)
 
     @staticmethod
     def _parserevs(splitted):
-        ''' splitted is a list of fields according to our rev.style, where each 6
-        fields compose one revision. '''
+        ''' splitted is a list of fields according to our rev.style, where each
+        6 fields compose one revision. '''
         revs = []
         for rev in util.grouper(7, splitted):
             # truncate the timezone and convert to a local datetime
             posixtime = float(rev[6].split('.', 1)[0])
             dt = datetime.datetime.fromtimestamp(posixtime)
-            revs.append(revision(rev[0], rev[1], rev[2], rev[3], rev[4], rev[5], dt))
+            revs.append(revision(rev[0], rev[1], rev[2], rev[3], rev[4],
+                                 rev[5], dt))
         return revs
 
     def runcommand(self, args, inchannels, outchannels):
@@ -365,12 +378,13 @@ class hgclient(object):
             elif channel in outchannels:
                 outchannels[channel](data)
             # result channel, command finished
-            elif channel == 'r':
-                return struct.unpack(hgclient.retfmt, data.encode('latin-1'))[0]
+            elif channel == b'r':
+                return struct.unpack(hgclient.retfmt,
+                                     data.encode('latin-1'))[0]
             # a channel that we don't know and can't ignore
             elif channel.isupper():
-                raise error.ResponseError("unexpected data on required channel '%s'"
-                                          % channel)
+                raise error.ResponseError("unexpected data on required"
+                                          "channel '%s'" % channel)
             # optional channel
             else:
                 pass
@@ -379,28 +393,28 @@ class hgclient(object):
         """
         args is the cmdline (usually built using util.cmdbuilder)
 
-        eh is an error handler that is passed the return code, stdout and stderr
-        If no eh is given, we raise a CommandError if ret != 0
+        eh is an error handler that is passed the return code, stdout and
+        stderr If no eh is given, we raise a CommandError if ret != 0
 
         prompt is used to reply to prompts by the server
-        It receives the max number of bytes to return and the contents of stdout
-        received so far
+        It receives the max number of bytes to return and the contents of
+        stdout received so far
 
         input is used to reply to bulk data requests by the server
         It receives the max number of bytes to return
         """
 
         out, err = io.StringIO(), io.StringIO()
-        outchannels = {'o' : out.write, 'e' : err.write}
+        outchannels = {b'o' : out.write, b'e' : err.write}
 
         inchannels = {}
         if prompt is not None:
             def func(size):
                 reply = prompt(size, out.getvalue())
                 return reply.decode('latin-1')
-            inchannels['L'] = func
+            inchannels[b'L'] = func
         if input is not None:
-            inchannels['I'] = input
+            inchannels[b'I'] = input
 
         ret = self.runcommand(args, inchannels, outchannels)
         out, err = out.getvalue(), err.getvalue()
@@ -423,11 +437,11 @@ class hgclient(object):
 
     def close(self):
         """
-        Closes the command server instance and waits for it to exit, returns the
-        exit code.
+        Closes the command server instance and waits for it to exit, returns
+        the exit code.
 
-        Attempting to call any function afterwards that needs to communicate with
-        the server will raise a ValueError.
+        Attempting to call any function afterwards that needs to communicate 
+        with the server will raise a ValueError.
         """
         self.server.stdin.close()
         self.server.wait()
@@ -464,16 +478,17 @@ class hgclient(object):
         """
         Add all new files and remove all missing files from the repository.
 
-        New files are ignored if they match any of the patterns in ".hgignore". As
-        with add, these changes take effect at the next commit.
+        New files are ignored if they match any of the patterns in
+        ".hgignore". As with add, these changes take effect at the next
+        commit.
 
         similarity - used to detect renamed files. With a parameter
-        greater than 0, this compares every removed file with every added file and
-        records those similar enough as renames. This option takes a percentage
-        between 0 (disabled) and 100 (files must be identical) as its parameter.
-        Detecting renamed files this way can be expensive. After using this
-        option, "hg status -C" can be used to check which files were identified as
-        moved or renamed.
+        greater than 0, this compares every removed file with every added file
+        and records those similar enough as renames. This option takes a
+        percentage between 0 (disabled) and 100 (files must be identical) as
+        its parameter. Detecting renamed files this way can be expensive.
+        After using this option, "hg status -C" can be used to check which
+        files were identified as moved or renamed.
 
         dryrun - do no perform actions
         include - include names matching the given patterns
@@ -492,9 +507,10 @@ class hgclient(object):
 
         return bool(eh)
 
-    def annotate(self, files, rev=None, nofollow=False, text=False, user=False,
-                 file=False, date=False, number=False, changeset=False,
-                 line=False, verbose=False, include=None, exclude=None):
+    def annotate(self, files, rev=None, nofollow=False, text=False,
+                 user=False, file=False, date=False, number=False,
+                 changeset=False, line=False, verbose=False, include=None,
+                 exclude=None):
         """
         Show changeset information by line for each file in files.
 
@@ -510,8 +526,8 @@ class hgclient(object):
         include - include names matching the given patterns
         exclude - exclude names matching the given patterns
 
-        Yields a (info, contents) tuple for each line in a file. Info is a space
-        separated string according to the given options.
+        Yields a (info, contents) tuple for each line in a file. Info is a
+        space separated string according to the given options.
         """
         if not isinstance(files, list):
             files = [files]
@@ -531,12 +547,12 @@ class hgclient(object):
         """
         Create an unversioned archive of a repository revision.
 
-        The exact name of the destination archive or directory is given using a
-        format string; see export for details.
+        The exact name of the destination archive or directory is given using
+        a format string; see export for details.
 
-        Each member added to an archive file has a directory prefix prepended. Use
-        prefix to specify a format string for the prefix. The default is the
-        basename of the archive, with suffixes removed.
+        Each member added to an archive file has a directory prefix prepended.
+        Use prefix to specify a format string for the prefix. The default is
+        the basename of the archive, with suffixes removed.
 
         dest - destination path
         rev - revision to distribute. The revision used is the parent of the
@@ -544,8 +560,8 @@ class hgclient(object):
 
         nodecode - do not pass files through decoders
         prefix - directory prefix for files in archive
-        type - type of distribution to create. The archive type is automatically
-        detected based on file extension if one isn't given.
+        type - type of distribution to create. The archive type is
+        automatically detected based on file extension if one isn't given.
 
         Valid types are:
 
@@ -560,8 +576,8 @@ class hgclient(object):
         include - include names matching the given patterns
         exclude - exclude names matching the given patterns
         """
-        args = cmdbuilder('archive', dest, r=rev, no_decode=nodecode, p=prefix,
-                          t=type, S=subrepos, I=include, X=exclude,
+        args = cmdbuilder('archive', dest, r=rev, no_decode=nodecode, 
+                          p=prefix, t=type, S=subrepos, I=include, X=exclude,
                           hidden=self.hidden)
 
         self.rawcommand(args)
@@ -572,9 +588,9 @@ class hgclient(object):
         Prepare a new changeset with the effect of rev undone in the current
         working directory.
 
-        If rev is the parent of the working directory, then this new changeset is
-        committed automatically. Otherwise, hg needs to merge the changes and the
-        merged result is left uncommitted.
+        If rev is the parent of the working directory, then this new changeset
+        is committed automatically. Otherwise, hg needs to merge the changes
+        and the merged result is left uncommitted.
 
         rev - revision to backout
         merge - merge with old dirstate parent after backout
@@ -588,14 +604,14 @@ class hgclient(object):
         if message and logfile:
             raise ValueError("cannot specify both a message and a logfile")
 
-        args = cmdbuilder('backout', r=rev, merge=merge, parent=parent, t=tool,
-                          m=message, l=logfile, d=date, u=user,
+        args = cmdbuilder('backout', r=rev, merge=merge, parent=parent,
+                          t=tool, m=message, l=logfile, d=date, u=user,
                           hidden=self.hidden)
 
         self.rawcommand(args)
 
-    def bookmark(self, name, rev=None, force=False, delete=False, inactive=False,
-                 rename=None):
+    def bookmark(self, name, rev=None, force=False, delete=False,
+                 inactive=False, rename=None):
         """
         Set a bookmark on the working directory's parent revision or rev,
         with the given name.
@@ -614,8 +630,8 @@ class hgclient(object):
 
     def bookmarks(self):
         """
-        Return the bookmarks as a list of (name, rev, node) and the index of the
-        current one.
+        Return the bookmarks as a list of (name, rev, node) and the index of
+        the current one.
 
         If there isn't a current one, -1 is returned as the index.
         """
@@ -636,13 +652,14 @@ class hgclient(object):
 
     def branch(self, name=None, clean=False, force=False):
         """
-        When name isn't given, return the current branch name. Otherwise set the
-        working directory branch name (the branch will not exist in the repository
-        until the next commit). Standard practice recommends that primary
-        development take place on the 'default' branch.
+        When name isn't given, return the current branch name. Otherwise set
+        the working directory branch name (the branch will not exist in the
+        repository until the next commit). Standard practice recommends that
+        primary development take place on the 'default' branch.
 
-        When clean is True, reset and return the working directory branch to that
-        of the parent of the working directory, negating a previous branch change.
+        When clean is True, reset and return the working directory branch to
+        that of the parent of the working directory, negating a previous
+        branch change.
 
         name - new branch name
         clean - reset branch name to parent branch name
