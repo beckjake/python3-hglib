@@ -1,15 +1,18 @@
-#must be before 'client'
+# must be before 'client'
 HGPATH = 'hg'
 
-from . import client, util, error
-import subprocess
+from . import client
+from . import util
+from . import error
 
 
 def open(path=None, encoding=None, configs=None):
-    ''' starts a cmdserver for the given path (or for a repository found in the
-    cwd). HGENCODING is set to the given encoding. configs is a list of key, value,
-    similar to those passed to hg --config. '''
+    ''' starts a cmdserver for the given path (or for a repository found in
+    the cwd). HGENCODING is set to the given encoding. configs is a list of
+    key, value, similar to those passed to hg --config.
+    '''
     return client.hgclient(path, encoding, configs)
+
 
 def init(dest=None, ssh=None, remotecmd=None, insecure=False,
          encoding=None, configs=None):
@@ -24,9 +27,10 @@ def init(dest=None, ssh=None, remotecmd=None, insecure=False,
 
     return client.hgclient(dest, encoding, configs, connect=False)
 
+
 def clone(source=None, dest=None, noupdate=False, updaterev=None, rev=None,
-          branch=None, pull=False, uncompressed=False, ssh=None, remotecmd=None,
-          insecure=False, encoding=None, configs=None):
+          branch=None, pull=False, uncompressed=False, ssh=None,
+          remotecmd=None, insecure=False, encoding=None, configs=None):
     args = util.cmdbuilder('clone', source, dest, noupdate=noupdate,
                            updaterev=updaterev, rev=rev, branch=branch,
                            pull=pull, uncompresses=uncompressed,

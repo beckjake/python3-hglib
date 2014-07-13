@@ -1,4 +1,3 @@
-import itertools
 import os
 import subprocess
 from . import error
@@ -9,6 +8,7 @@ def grouper(n, iterable):
     ''' list(grouper(2, range(4))) -> [(0, 1), (2, 3)] '''
     args = [iter(iterable)] * n
     return zip(*args)
+
 
 def eatlines(s, n):
     """
@@ -28,6 +28,7 @@ def eatlines(s, n):
         if n == 0:
             return cs.read()
     return ''
+
 
 def skiplines(s, prefix):
     """
@@ -50,6 +51,7 @@ def skiplines(s, prefix):
 
     return ''
 
+
 def cmdbuilder(name, *args, **kwargs):
     """
     A helper for building the command arguments
@@ -60,7 +62,8 @@ def cmdbuilder(name, *args, **kwargs):
     keys that are single lettered are prepended with '-', others with '--',
     underscores are replaced with dashes
 
-    keys with False boolean values are ignored, lists add the key multiple times
+    keys with False boolean values are ignored, lists add the key multiple
+    times
 
     None arguments are skipped
 
@@ -107,11 +110,13 @@ def cmdbuilder(name, *args, **kwargs):
 
     return cmd
 
+
 class reterrorhandler(object):
     """
     This class is meant to be used with rawcommand() error handler argument.
     It remembers the return value the command returned if it's one of allowed
-    values, which is only 1 if none are given. Otherwise it raises a CommandError.
+    values, which is only 1 if none are given. Otherwise it raises a
+    CommandError.
 
     >>> e = reterrorhandler('')
     >>> bool(e)
@@ -139,6 +144,7 @@ class reterrorhandler(object):
         """ Returns True if the return code was 0, False otherwise """
         return self.ret == 0
 
+
 class propertycache(object):
     """
     Decorator that remembers the return value of a function call.
@@ -158,17 +164,21 @@ class propertycache(object):
     def __init__(self, func):
         self.func = func
         self.name = func.__name__
+
     def __get__(self, obj, type=None):
         result = self.func(obj)
         setattr(obj, self.name, result)
         return result
 
+
 close_fds = os.name == 'posix'
+
 
 startupinfo = None
 if os.name == 'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
 
 def popen(args, env={}):
     environ = None
@@ -176,6 +186,7 @@ def popen(args, env={}):
         environ = dict(os.environ)
         environ.update(env)
 
-    return subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, close_fds=close_fds,
-                            startupinfo=startupinfo, env=environ)
+    return subprocess.Popen(args, stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            close_fds=close_fds, startupinfo=startupinfo,
+                            env=environ)

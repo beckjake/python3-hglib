@@ -1,5 +1,3 @@
-import subprocess
-import os
 import struct
 import re
 import datetime
@@ -14,6 +12,7 @@ from . import merge
 cmdbuilder = util.cmdbuilder
 
 _nullcset = ['-1', '0'*39, '', '', '', '', '']
+
 
 class changectx(object):
     """A changecontext object makes access to data related to a particular
@@ -106,7 +105,8 @@ class changectx(object):
         Unless this method is used to query the working copy status, the
         _status property will implicitly read the status using its default
         arguments."""
-        stat = self._parsestatus(self._repo.status(change=self, ignored=ignored,
+        stat = self._parsestatus(self._repo.status(change=self,
+                                                   ignored=ignored,
                                                    clean=clean))
         self._unknown = self._ignored = self._clean = None
         if ignored:
@@ -237,7 +237,8 @@ class changectx(object):
 
 class revision(tuple):
     def __new__(cls, rev, node, tags, branch, author, desc, date):
-        return tuple.__new__(cls, (rev, node, tags, branch, author, desc, date))
+        return tuple.__new__(cls, (rev, node, tags, branch, author, desc,
+                                   date))
 
     @property
     def rev(self):
@@ -267,6 +268,7 @@ class revision(tuple):
     def date(self):
         return self[6]
 
+
 class hgclient(object):
     inputfmt = '>I'
     outputfmt = '>cI'
@@ -286,7 +288,7 @@ class hgclient(object):
 
         self.server = None
         self._version = None
-        #include the hidden changesets if True
+        # include the hidden changesets if True
         self.hidden = None
         self._encoding = encoding
 
@@ -318,25 +320,42 @@ class hgclient(object):
 
         self._encoding = msg[1][len('encoding: '):]
         if not self._encoding:
-            raise error.ResponseError("bad hello message: expected 'encoding: '"
-                                      ", got %r" % msg[1])
+            raise error.ResponseError("bad hello message: expected "
+                                      "'encoding: ', got %r" % msg[1])
 
     def _read_stdout(self, size):
+        """Read the server's stdout and try to decode it. Either way, return
+        it as unicode.
+
+        :param int size: The amount to read
+        :return str: A unicode string.
+        """
         data = self.server.stdout.read(size)
         if self._encoding:
             try:
                 return data.decode(self._encoding)
             except UnicodeError:
                 self._encoding = None
-        #arbitrary 1-byte encoding, hope for the best!
+        # arbitrary 1-byte encoding, hope for the best!
         return data.decode('latin-1')
 
-    def _readchannel(self) -> (bytes, bytes):
-        #data is bytes
+    def _readchannel(self):
+        """Read server for data and a channel. Messages are written in byte
+        order: a 1-byte channel, big-endian unsigned integer. The unsigned
+        integer is either just an integer or a length indicating the length
+        in bytes of the message to be read.
+
+        Integers are returned as their value.
+
+        Messages are encoded according to the encoding specified by the server,
+        or latin-1.
+
+        :return tuple: A (bytes, str) tuple or a (bytes, int) tuple.
+        :raise error.ServerError: If no data is read.
+        """
         data = self.server.stdout.read(hgclient.outputfmtsize)
         if not data:
-            raise error.ServerError()
-        #data is bytes, channel is unicode
+            raise error.ServerError("No data")
         channel, length = struct.unpack(hgclient.outputfmt, data)
         if channel in b'IL':
             return channel, length
@@ -405,7 +424,7 @@ class hgclient(object):
         """
 
         out, err = io.StringIO(), io.StringIO()
-        outchannels = {b'o' : out.write, b'e' : err.write}
+        outchannels = {b'o': out.write, b'e': err.write}
 
         inchannels = {}
         if prompt is not None:
@@ -440,7 +459,7 @@ class hgclient(object):
         Closes the command server instance and waits for it to exit, returns
         the exit code.
 
-        Attempting to call any function afterwards that needs to communicate 
+        Attempting to call any function afterwards that needs to communicate
         with the server will raise a ValueError.
         """
         self.server.stdin.close()
@@ -576,7 +595,7 @@ class hgclient(object):
         include - include names matching the given patterns
         exclude - exclude names matching the given patterns
         """
-        args = cmdbuilder('archive', dest, r=rev, no_decode=nodecode, 
+        args = cmdbuilder('archive', dest, r=rev, no_decode=nodecode,
                           p=prefix, t=type, S=subrepos, I=include, X=exclude,
                           hidden=self.hidden)
 
@@ -681,7 +700,8 @@ class hgclient(object):
 
     def branches(self, active=False, closed=False):
         """
-        Returns the repository's named branches as a list of (name, rev, node).
+        Returns the repository's named branches as a list of
+        (name, rev, node).
 
         active - show only branches that have unmerged heads
         closed - show normal and closed branches
@@ -694,15 +714,16 @@ class hgclient(object):
             namerev, node = line.rsplit(':', 1)
             name, rev = namerev.rsplit(' ', 1)
             name = name.rstrip()
-            node = node.split()[0] # get rid of ' (inactive)'
+            node = node.split()[0]  # get rid of ' (inactive)'
             branches.append((name, int(rev), node))
         return branches
 
-    def bundle(self, file, destrepo=None, rev=[], branch=[], base=[], all=False,
-               force=False, type=None, ssh=None, remotecmd=None, insecure=False):
+    def bundle(self, file, destrepo=None, rev=[], branch=[], base=[],
+               all=False, force=False, type=None, ssh=None, remotecmd=None,
+               insecure=False):
         """
-        Generate a compressed changegroup file collecting changesets not known to
-        be in another repository.
+        Generate a compressed changegroup file collecting changesets not known
+        to be in another repository.
 
         If destrepo isn't given, then hg assumes the destination will have all
         the nodes you specify with base. To create a bundle containing all
@@ -714,19 +735,21 @@ class hgclient(object):
         branch - a specific branch you would like to bundle
         base - a base changeset assumed to be available at the destination
         all - bundle all changesets in the repository
-        type - bundle compression type to use, available compression methods are:
-        none, bzip2, and gzip (default: bzip2)
+        type - bundle compression type to use, available compression methods
+        are: none, bzip2, and gzip (default: bzip2)
 
         force - run even when the destrepo is unrelated
         ssh - specify ssh command to use
         remotecmd - specify hg command to run on the remote side
-        insecure - do not verify server certificate (ignoring web.cacerts config)
+        insecure - do not verify server certificate
+        (ignoring web.cacerts config)
 
         Return True if a bundle was created, False if no changes were found.
         """
         args = cmdbuilder('bundle', file, destrepo, f=force, r=rev, b=branch,
-                          base=base, a=all, t=type, e=ssh, remotecmd=remotecmd,
-                          insecure=insecure, hidden=self.hidden)
+                          base=base, a=all, t=type, e=ssh,
+                          remotecmd=remotecmd, insecure=insecure,
+                          hidden=self.hidden)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
@@ -740,8 +763,9 @@ class hgclient(object):
         directory is used, or tip if no revision is checked out.
 
         If output is given, writes the contents to the specified file.
-        The name of the file is given using a format string. The formatting rules
-        are the same as for the export command, with the following additions:
+        The name of the file is given using a format string. The formatting
+        rules are the same as for the export command, with the following
+        additions:
 
         "%s"  basename of file being printed
         "%d"  dirname of file being printed, or '.' if in repository root
@@ -765,11 +789,13 @@ class hgclient(object):
         updaterev - revision, tag or branch to check out
         revrange - include the specified changeset
         """
-        args = cmdbuilder('clone', source, dest, b=branch, u=updaterev, r=revrange)
+        args = cmdbuilder('clone', source, dest, b=branch, u=updaterev,
+                          r=revrange)
         self.rawcommand(args)
 
-    def commit(self, message=None, logfile=None, addremove=False, closebranch=False,
-               date=None, user=None, include=None, exclude=None):
+    def commit(self, message=None, logfile=None, addremove=False,
+               closebranch=False, date=None, user=None, include=None,
+               exclude=None):
         """
         Commit changes reported by status into the repository.
 
@@ -798,10 +824,11 @@ class hgclient(object):
 
     def config(self, names=[], untrusted=False, showsource=False):
         """
-        Return a list of (section, key, value) config settings from all hgrc files
+        Return a list of (section, key, value) config settings from all hgrc
+        files
 
-        When showsource is specified, return (source, section, key, value) where
-        source is of the form filename:[line]
+        When showsource is specified, return (source, section, key, value)
+        where source is of the form filename:[line]
         """
         def splitline(s):
             k, value = s.rstrip().split('=', 1)
@@ -832,20 +859,23 @@ class hgclient(object):
         """
         Return the server's encoding (as reported in the hello message).
         """
-        if not 'getencoding' in self.capabilities:
-            raise CapabilityError('getencoding')
+        if 'getencoding' not in self.capabilities:
+            raise error.CapabilityError('getencoding')
 
         if not self._encoding:
             self.server.stdin.write('getencoding\n')
-            self._encoding = self._readfromchannel('r')
+            channel, encoding = self._readchannel()
+            assert channel == b'r'
+            self._encoding = encoding
 
         return self._encoding
 
     def copy(self, source, dest, after=False, force=False, dryrun=False,
              include=None, exclude=None):
         """
-        Mark dest as having copies of source files. If dest is a directory, copies
-        are put in that directory. If dest is a file, then source must be a string.
+        Mark dest as having copies of source files. If dest is a directory,
+        copies are put in that directory. If dest is a file, then source must
+        be a string.
 
         Returns True on success, False if errors are encountered.
 
@@ -871,8 +901,9 @@ class hgclient(object):
 
     def diff(self, files=[], revs=[], change=None, text=False,
              git=False, nodates=False, showfunction=False, reverse=False,
-             ignoreallspace=False, ignorespacechange=False, ignoreblanklines=False,
-             unified=None, stat=False, subrepos=False, include=None, exclude=None):
+             ignoreallspace=False, ignorespacechange=False,
+             ignoreblanklines=False, unified=None, stat=False, subrepos=False,
+             include=None, exclude=None):
         """
         Return differences between revisions for the specified files.
 
@@ -900,17 +931,17 @@ class hgclient(object):
                           p=showfunction, reverse=reverse,
                           w=ignoreallspace, b=ignorespacechange,
                           B=ignoreblanklines, U=unified, stat=stat,
-                          S=subrepos, I=include, X=exclude, hidden=self.hidden,
-                          *files)
+                          S=subrepos, I=include, X=exclude,
+                          hidden=self.hidden, *files)
 
         return self.rawcommand(args)
 
-    def export(self, revs, output=None, switchparent=False, text=False, git=False,
-               nodates=False):
+    def export(self, revs, output=None, switchparent=False, text=False,
+               git=False, nodates=False):
         """
-        Return the header and diffs for one or more changesets. When output is
-        given, dumps to file. The name of the file is given using a format string.
-        The formatting rules are as follows:
+        Return the header and diffs for one or more changesets. When output
+        is given, dumps to file. The name of the file is given using a format
+        string. The formatting rules are as follows:
 
         "%%"  literal "%" character
         "%H"  changeset hash (40 hexadecimal digits)
@@ -941,11 +972,12 @@ class hgclient(object):
 
     def forget(self, files, include=None, exclude=None):
         """
-        Mark the specified files so they will no longer be tracked after the next
-        commit.
+        Mark the specified files so they will no longer be tracked after the
+        next commit.
 
         This only removes files from the current branch, not from the entire
-        project history, and it does not delete them from the working directory.
+        project history, and it does not delete them from the working
+        directory.
 
         Returns True on success.
 
@@ -972,12 +1004,14 @@ class hgclient(object):
         regexps. It searches repository history, not the working directory.
         It always prints the revision number in which a match appears.
 
-        Yields (filename, revision, [line, [match status, [user, [date, [match]]]]])
+        Yields
+        (filename, revision, [line, [match status, [user, [date, [match]]]]])
         per match depending on the given options.
 
         all - print all revisions that match
         text - treat all files as text
-        follow - follow changeset history, or file history across copies and renames
+        follow - follow changeset history, or file history across copies and
+        renames
         ignorecase - ignore case when matching
         fileswithmatches - return only filenames and revisions that match
         line - return line numbers in the result tuple
@@ -1020,11 +1054,12 @@ class hgclient(object):
         """
         Return a list of current repository heads or branch heads.
 
-        rev - return only branch heads on the branches associated with the specified
-        changesets.
+        rev - return only branch heads on the branches associated with the
+        specified changesets.
 
         startrev - return only heads which are descendants of the given revs.
-        topological - named branch mechanics will be ignored and only changesets
+        topological - named branch mechanics will be ignored and only
+        changesets
         without children will be shown.
 
         closed - normal and closed branch heads.
@@ -1044,16 +1079,16 @@ class hgclient(object):
         out = self.rawcommand(args, eh=eh).split('\0')[:-1]
         return self._parserevs(out)
 
-    def identify(self, rev=None, source=None, num=False, id=False, branch=False,
-                 tags=False, bookmarks=False):
+    def identify(self, rev=None, source=None, num=False, id=False,
+                 branch=False, tags=False, bookmarks=False):
         """
-        Return a summary string identifying the repository state at rev using one or
-        two parent hash identifiers, followed by a "+" if the working directory has
-        uncommitted changes, the branch name (if not default), a list of tags, and
-        a list of bookmarks.
+        Return a summary string identifying the repository state at rev using
+        one or two parent hash identifiers, followed by a "+" if the working
+        directory has uncommitted changes, the branch name (if not default), a
+        list of tags, and a list of bookmarks.
 
-        When rev is not given, return a summary string of the current state of the
-        repository.
+        When rev is not given, return a summary string of the current state of
+        the repository.
 
         Specifying source as a repository root or Mercurial bundle will cause
         lookup to operate on that repository/bundle.
@@ -1064,8 +1099,8 @@ class hgclient(object):
         tags - show tags
         bookmarks - show bookmarks
         """
-        args = cmdbuilder('identify', source, r=rev, n=num, i=id, b=branch, t=tags,
-                          B=bookmarks, hidden=self.hidden)
+        args = cmdbuilder('identify', source, r=rev, n=num, i=id, b=branch,
+                          t=tags, B=bookmarks, hidden=self.hidden)
 
         return self.rawcommand(args)
 
@@ -1077,8 +1112,8 @@ class hgclient(object):
         file-like object and commit them individually (unless nocommit is
         specified).
 
-        strip - directory strip option for patch. This has the same meaning as the
-        corresponding patch option (default: 1)
+        strip - directory strip option for patch. This has the same meaning
+        as the corresponding patch option (default: 1)
 
         force - skip check for outstanding uncommitted changes
         nocommit - don't commit, just update the working directory
@@ -1108,8 +1143,8 @@ class hgclient(object):
         args = cmdbuilder('import', strip=strip, force=force,
                           no_commit=nocommit, bypass=bypass, exact=exact,
                           import_branch=importbranch, message=message,
-                          date=date, user=user, similarity=similarity, _=stdin,
-                          *patches)
+                          date=date, user=user, similarity=similarity,
+                          _=stdin, *patches)
 
         self.rawcommand(args, prompt=prompt, input=input)
 
@@ -1117,16 +1152,18 @@ class hgclient(object):
                  bundle=None, bookmarks=False, branch=None, limit=None,
                  nomerges=False, subrepos=False):
         """
-        Return new changesets found in the specified path or the default pull
-        location.
+        Return new changesets found in the specified path or the default
+        pull location.
 
-        When bookmarks=True, return a list of (name, node) of incoming bookmarks.
+        When bookmarks=True, return a list of (name, node) of incoming
+        bookmarks.
 
-        revrange - a remote changeset or list of changesets intended to be added
+        revrange - a remote changeset or list of changesets intended to be
+        added
         force - run even if remote repository is unrelated
         newest - show newest record first
-        bundle - avoid downloading the changesets twice and store the bundles into
-        the specified file.
+        bundle - avoid downloading the changesets twice and store the bundles
+        into the specified file.
 
         bookmarks - compare bookmarks (this changes the return value)
         branch - a specific branch you would like to pull
@@ -1134,14 +1171,16 @@ class hgclient(object):
         nomerges - do not show merges
         ssh - specify ssh command to use
         remotecmd - specify hg command to run on the remote side
-        insecure- do not verify server certificate (ignoring web.cacerts config)
+        insecure- do not verify server certificate
+        (ignoring web.cacerts config)
         subrepos - recurse into subrepositories
         """
         args = cmdbuilder('incoming',
                           path,
                           template=templates.changeset, r=revrange,
                           f=force, n=newest, bundle=bundle,
-                          B=bookmarks, b=branch, l=limit, M=nomerges, S=subrepos)
+                          B=bookmarks, b=branch, l=limit, M=nomerges,
+                          S=subrepos)
 
         def eh(ret, out, err):
             if ret != 1:
@@ -1162,23 +1201,25 @@ class hgclient(object):
             return self._parserevs(out)
 
     def log(self, revrange=None, files=[], follow=False, followfirst=False,
-            date=None, copies=False, keyword=None, removed=False, onlymerges=False,
-            user=None, branch=None, prune=None, hidden=None, limit=None,
-            nomerges=False, include=None, exclude=None):
+            date=None, copies=False, keyword=None, removed=False,
+            onlymerges=False, user=None, branch=None, prune=None, hidden=None,
+            limit=None, nomerges=False, include=None, exclude=None):
         """
-        Return the revision history of the specified files or the entire project.
+        Return the revision history of the specified files or the entire
+        project.
 
-        File history is shown without following rename or copy history of files.
-        Use follow with a filename to follow history across renames and copies.
-        follow without a filename will only show ancestors or descendants of the
-        starting revision. followfirst only follows the first parent of merge
-        revisions.
+        File history is shown without following rename or copy history of
+        files. Use follow with a filename to follow history across renames and
+        copies. follow without a filename will only show ancestors or
+        descendants of the starting revision. followfirst only follows the
+        first parent of merge revisions.
 
-        If revrange isn't specified, the default is "tip:0" unless follow is set,
-        in which case the working directory parent is used as the starting
-        revision.
+        If revrange isn't specified, the default is "tip:0" unless follow is
+        set, in which case the working directory parent is used as the
+        starting revision.
 
-        The returned changeset is a named tuple with the following string fields:
+        The returned changeset is a named tuple with the following string
+        fields:
             - rev
             - node
             - tags (space delimited)
@@ -1186,7 +1227,8 @@ class hgclient(object):
             - author
             - desc
 
-        follow - follow changeset history, or file history across copies and renames
+        follow - follow changeset history, or file history across copies and
+        renames
         followfirst - only follow the first parent of merge changesets
         date - show revisions matching date spec
         copies - show copied files
@@ -1218,13 +1260,13 @@ class hgclient(object):
 
     def manifest(self, rev=None, all=False):
         """
-        Yields (nodeid, permission, executable, symlink, file path) tuples for
-        version controlled files for the given revision. If no revision is given,
-        the first parent of the working directory is used, or the null revision if
-        no revision is checked out.
+        Yields (nodeid, permission, executable, symlink, file path) tuples
+        for version controlled files for the given revision. If no revision is
+        given, the first parent of the working directory is used, or the null
+        revision if no revision is checked out.
 
-        When all is True, all files from all revisions are yielded (just the name).
-        This includes deleted and renamed files.
+        When all is True, all files from all revisions are yielded
+        (just the name). This includes deleted and renamed files.
         """
         args = cmdbuilder('manifest', r=rev, all=all, debug=True,
                           hidden=self.hidden)
@@ -1242,28 +1284,31 @@ class hgclient(object):
                 executable = line[45] == '*'
                 yield (node, perm, executable, symlink, line[47:])
 
-    def merge(self, rev=None, force=False, tool=None, cb=merge.handlers.abort):
+    def merge(self, rev=None, force=False, tool=None,
+              cb=merge.handlers.abort):
         """
-        Merge working directory with rev. If no revision is specified, the working
-        directory's parent is a head revision, and the current branch contains
-        exactly one other head, the other head is merged with by default.
+        Merge working directory with rev. If no revision is specified, the
+        working directory's parent is a head revision, and the current branch
+        contains exactly one other head, the other head is merged with by
+        default.
 
         The current working directory is updated with all changes made in the
         requested revision since the last common predecessor revision.
 
         Files that changed between either parent are marked as changed for the
-        next commit and a commit must be performed before any further updates to
-        the repository are allowed. The next commit will have two parents.
+        next commit and a commit must be performed before any further updates
+        to the repository are allowed. The next commit will have two parents.
 
         force - force a merge with outstanding changes
         tool - can be used to specify the merge tool used for file merges. It
-        overrides the HGMERGE environment variable and your configuration files.
+        overrides the HGMERGE environment variable and your configuration
+        files.
 
-        cb - controls the behaviour when Mercurial prompts what to do with regard
-        to a specific file, e.g. when one parent modified a file and the other
-        removed it. It can be one of merge.handlers, or a function that gets a
-        single argument which are the contents of stdout. It should return one
-        of the expected choices (a single character).
+        cb - controls the behaviour when Mercurial prompts what to do with
+        regard to a specific file, e.g. when one parent modified a file and
+        the other removed it. It can be one of merge.handlers, or a function
+        that gets a single argument which are the contents of stdout. It
+        should return one of the expected choices (a single character).
         """
         # we can't really use --preview since merge doesn't support --template
         args = cmdbuilder('merge', r=rev, f=force, t=tool)
@@ -1282,8 +1327,8 @@ class hgclient(object):
              include=None, exclude=None):
         """
         Mark dest as copies of source; mark source for deletion. If dest is a
-        directory, copies are put in that directory. If dest is a file, then source
-        must be a string.
+        directory, copies are put in that directory. If dest is a file, then
+        source must be a string.
 
         Returns True on success, False if errors are encountered.
 
@@ -1314,10 +1359,11 @@ class hgclient(object):
         Return changesets not found in the specified path or the default push
         location.
 
-        When bookmarks=True, return a list of (name, node) of bookmarks that will
-        be pushed.
+        When bookmarks=True, return a list of (name, node) of bookmarks that
+        will be pushed.
 
-        revrange - a (list of) changeset intended to be included in the destination
+        revrange - a (list of) changeset intended to be included in the
+        destination
         force - run even when the destination is unrelated
         newest - show newest record first
         branch - a specific branch you would like to push
@@ -1325,7 +1371,8 @@ class hgclient(object):
         nomerges - do not show merges
         ssh - specify ssh command to use
         remotecmd - specify hg command to run on the remote side
-        insecure - do not verify server certificate (ignoring web.cacerts config)
+        insecure - do not verify server certificate
+        (ignoring web.cacerts config)
         subrepos - recurse into subrepositories
         """
         args = cmdbuilder('outgoing',
@@ -1355,9 +1402,9 @@ class hgclient(object):
     def parents(self, rev=None, file=None):
         """
         Return the working directory's parent revisions. If rev is given, the
-        parent of that revision will be printed. If file is given, the revision
-        in which the file was last changed (before the working directory revision
-        or the revision specified by rev) is returned.
+        parent of that revision will be printed. If file is given, the
+        revision in which the file was last changed (before the working
+        directory revision or the revision specified by rev) is returned.
         """
         args = cmdbuilder('parents', file, template=templates.changeset, r=rev,
                           hidden=self.hidden)
@@ -1372,12 +1419,12 @@ class hgclient(object):
 
     def paths(self, name=None):
         """
-        Return the definition of given symbolic path name. If no name is given,
-        return a dictionary of pathname : url of all available names.
+        Return the definition of given symbolic path name. If no name is
+        given, return a dictionary of pathname : url of all available names.
 
-        Path names are defined in the [paths] section of your configuration file
-        and in "/etc/mercurial/hgrc". If run inside a repository, ".hg/hgrc" is
-        used, too.
+        Path names are defined in the [paths] section of your configuration
+        file and in "/etc/mercurial/hgrc". If run inside a repository,
+        ".hg/hgrc" is used, too.
         """
         if not name:
             out = self.rawcommand(['paths'])
@@ -1390,15 +1437,16 @@ class hgclient(object):
             out = self.rawcommand(args)
             return out.rstrip()
 
-    def pull(self, source=None, rev=None, update=False, force=False, bookmark=None,
-             branch=None, ssh=None, remotecmd=None, insecure=False, tool=None):
+    def pull(self, source=None, rev=None, update=False, force=False,
+             bookmark=None, branch=None, ssh=None, remotecmd=None,
+             insecure=False, tool=None):
         """
         Pull changes from a remote repository.
 
-        This finds all changes from the repository specified by source and adds
-        them to this repository. If source is omitted, the 'default' path will be
-        used. By default, this does not update the copy of the project in the
-        working directory.
+        This finds all changes from the repository specified by source and
+        adds them to this repository. If source is omitted, the 'default' path
+        will be used. By default, this does not update the copy of the project
+        in the working directory.
 
         Returns True on success, False if update was given and there were
         unresolved files.
@@ -1410,43 +1458,46 @@ class hgclient(object):
         branch - a (list of) specific branch you would like to pull
         ssh - specify ssh command to use
         remotecmd - specify hg command to run on the remote side
-        insecure - do not verify server certificate (ignoring web.cacerts config)
+        insecure - do not verify server certificate
+        (ignoring web.cacerts config)
         tool - specify merge tool for rebase
         """
-        args = cmdbuilder('pull', source, r=rev, u=update, f=force, B=bookmark,
-                          b=branch, e=ssh, remotecmd=remotecmd, insecure=insecure,
-                          t=tool)
+        args = cmdbuilder('pull', source, r=rev, u=update, f=force,
+                          B=bookmark, b=branch, e=ssh, remotecmd=remotecmd,
+                          insecure=insecure, t=tool)
 
         eh = util.reterrorhandler(args)
         self.rawcommand(args, eh=eh)
 
         return bool(eh)
 
-    def push(self, dest=None, rev=None, force=False, bookmark=None, branch=None,
-             newbranch=False, ssh=None, remotecmd=None, insecure=False):
+    def push(self, dest=None, rev=None, force=False, bookmark=None,
+             branch=None, newbranch=False, ssh=None, remotecmd=None,
+             insecure=False):
         """
         Push changesets from this repository to the specified destination.
 
-        This operation is symmetrical to pull: it is identical to a pull in the
-        destination repository from the current one.
+        This operation is symmetrical to pull: it is identical to a pull in
+        the destination repository from the current one.
 
         Returns True if push was successful, False if nothing to push.
 
-        rev - the (list of) specified revision and all its ancestors will be pushed
-        to the remote repository.
+        rev - the (list of) specified revision and all its ancestors will be
+        pushed to the remote repository.
 
         force - override the default behavior and push all changesets on all
         branches.
 
         bookmark - (list of) bookmark to push
         branch - a (list of) specific branch you would like to push
-        newbranch - allows push to create a new named branch that is not present at
-        the destination. This allows you to only create a new branch without
-        forcing other changes.
+        newbranch - allows push to create a new named branch that is not
+        present at the destination. This allows you to only create a new
+        branch without forcing other changes.
 
         ssh - specify ssh command to use
         remotecmd - specify hg command to run on the remote side
-        insecure - do not verify server certificate (ignoring web.cacerts config)
+        insecure - do not verify server certificate
+        (ignoring web.cacerts config)
         """
         args = cmdbuilder('push', dest, r=rev, f=force, B=bookmark, b=branch,
                           new_branch=newbranch, e=ssh, remotecmd=remotecmd,
@@ -1457,10 +1508,12 @@ class hgclient(object):
 
         return bool(eh)
 
-    def remove(self, files, after=False, force=False, include=None, exclude=None):
+    def remove(self, files, after=False, force=False, include=None,
+               exclude=None):
         """
-        Schedule the indicated files for removal from the repository. This only
-        removes files from the current branch, not from the entire project history.
+        Schedule the indicated files for removal from the repository. This
+        only removes files from the current branch, not from the entire
+        project history.
 
         Returns True on success, False if any warnings encountered.
 
@@ -1480,15 +1533,15 @@ class hgclient(object):
 
         return bool(eh)
 
-    def resolve(self, file=[], all=False, listfiles=False, mark=False, unmark=False,
-                tool=None, include=None, exclude=None):
+    def resolve(self, file=[], all=False, listfiles=False, mark=False,
+                unmark=False, tool=None, include=None, exclude=None):
         """
         Redo merges or set/view the merge status of given files.
 
         Returns True on success, False if any files fail a resolve attempt.
 
-        When listfiles is True, returns a list of (code, file path) of resolved
-        and unresolved files. Code will be 'R' or 'U' accordingly.
+        When listfiles is True, returns a list of (code, file path) of
+        resolved and unresolved files. Code will be 'R' or 'U' accordingly.
 
         all - select all unresolved files
         mark - mark files as resolved
@@ -1514,19 +1567,20 @@ class hgclient(object):
     def revert(self, files, rev=None, all=False, date=None, nobackup=False,
                dryrun=False, include=None, exclude=None):
         """
-        With no revision specified, revert the specified files or directories to
-        the contents they had in the parent of the working directory. This
+        With no revision specified, revert the specified files or directories
+        to the contents they had in the parent of the working directory. This
         restores the contents of files to an unmodified state and unschedules
         adds, removes, copies, and renames. If the working directory has two
         parents, you must explicitly specify a revision.
 
-        Specifying rev or date will revert the given files or directories to their
-        states as of a specific revision. Because revert does not change the
-        working directory parents, this will cause these files to appear modified.
-        This can be helpful to "back out" some or all of an earlier change.
+        Specifying rev or date will revert the given files or directories to
+        their states as of a specific revision. Because revert does not change
+        the working directory parents, this will cause these files to appear
+        modified. This can be helpful to "back out" some or all of an earlier
+        change.
 
-        Modified files are saved with a .orig suffix before reverting. To disable
-        these backups, use nobackup.
+        Modified files are saved with a .orig suffix before reverting. To
+        disable these backups, use nobackup.
 
         Returns True on success.
 
@@ -1556,13 +1610,13 @@ class hgclient(object):
         """
         return self.rawcommand(['root']).rstrip()
 
-    def status(self, rev=None, change=None, all=False, modified=False, added=False,
-               removed=False, deleted=False, clean=False, unknown=False,
-               ignored=False, copies=False, subrepos=False, include=None,
-               exclude=None):
+    def status(self, rev=None, change=None, all=False, modified=False,
+               added=False, removed=False, deleted=False, clean=False,
+               unknown=False, ignored=False, copies=False, subrepos=False,
+               include=None, exclude=None):
         """
-        Return status of files in the repository as a list of (code, file path)
-        where code can be:
+        Return status of files in the repository as a list of
+        (code, file path) where code can be:
 
                 M = modified
                 A = added
@@ -1613,14 +1667,17 @@ class hgclient(object):
     def tag(self, names, rev=None, message=None, force=False, local=False,
             remove=False, date=None, user=None):
         """
-        Add one or more tags specified by names for the current or given revision.
+        Add one or more tags specified by names for the current or given
+        revision.
 
-        Changing an existing tag is normally disallowed; use force to override.
+        Changing an existing tag is normally disallowed; use force to
+        override.
 
-        Tag commits are usually made at the head of a branch. If the parent of the
-        working directory is not a branch head, a CommandError will be raised.
-        force can be specified to force the tag commit to be based on a non-head
-        changeset.
+        Tag commits are usually made at the head of a branch. If the parent of
+        the working directory is not a branch head, a CommandError will be
+        raised.
+        Force can be specified to force the tag commit to be based on a
+        non-head changeset.
 
         local - make the tag local
         rev - revision to tag
@@ -1673,7 +1730,8 @@ class hgclient(object):
         if not isinstance(revs, (list, tuple)):
             revs = [revs]
         args = util.cmdbuilder('phase', secret=secret, draft=draft,
-                               public=public, force=force, hidden=self.hidden, *revs)
+                               public=public, force=force,
+                               hidden=self.hidden, *revs)
         out = self.rawcommand(args)
         if draft or public or secret:
             return
@@ -1683,8 +1741,9 @@ class hgclient(object):
 
     def summary(self, remote=False):
         """
-        Return a dictionary with a brief summary of the working directory state,
-        including parents, branch, commit status, and available updates.
+        Return a dictionary with a brief summary of the working directory
+        state, including parents, branch, commit status, and available
+        updates.
 
             'parent' : a list of (rev, node, tags, message)
             'branch' : the current branch
@@ -1764,8 +1823,8 @@ class hgclient(object):
     def tip(self):
         """
         Return the tip revision (usually just called the tip) which is the
-        changeset most recently added to the repository (and therefore the most
-        recently changed head).
+        changeset most recently added to the repository (and therefore the
+        most recently changed head).
         """
         args = cmdbuilder('tip', template=templates.changeset,
                           hidden=self.hidden)
@@ -1776,8 +1835,9 @@ class hgclient(object):
 
     def update(self, rev=None, clean=False, check=False, date=None):
         """
-        Update the repository's working directory to changeset specified by rev.
-        If rev isn't specified, update to the tip of the current named branch.
+        Update the repository's working directory to changeset specified by
+        rev. If rev isn't specified, update to the tip of the current named
+        branch.
 
         Return the number of files (updated, merged, removed, unresolved)
 
@@ -1794,20 +1854,19 @@ class hgclient(object):
         def eh(ret, out, err):
             if ret == 1:
                 return out
-
             raise error.CommandError(args, ret, out, err)
-
 
         out = self.rawcommand(args, eh=eh)
 
         m = re.search(r'^(\d+).+, (\d+).+, (\d+).+, (\d+)', out, re.MULTILINE)
-        return tuple(map(int,list(m.groups())))
+        return tuple(map(int, list(m.groups())))
 
     @property
     def version(self):
         """
-        Return hg version that runs the command server as a 4 fielded tuple: major,
-        minor, micro and local build info. e.g. (1, 9, 1, '+4-3095db9f5c2c')
+        Return hg version that runs the command server as a 4 fielded tuple:
+        major, minor, micro and local build info. e.g.
+        (1, 9, 1, '+4-3095db9f5c2c')
         """
         if self._version is None:
             v = self.rawcommand(cmdbuilder('version', q=True))

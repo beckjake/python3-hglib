@@ -8,11 +8,14 @@ class CommandError(Exception):
     def __str__(self):
         return str((self.ret, self.out.rstrip(), self.err.rstrip()))
 
+
 class ServerError(Exception):
     pass
 
+
 class ResponseError(ServerError, ValueError):
     pass
+
 
 class CapabilityError(ServerError):
     pass
